@@ -44,6 +44,7 @@
   .b-rep{background:rgba(163,113,247,.15);color:var(--purple)}
   .b-sheet{background:rgba(79,156,249,.15);color:var(--accent)}
   .b-folder{background:rgba(138,153,173,.15);color:var(--muted)}
+  .b-nodash{background:rgba(210,153,34,.12);color:var(--amber)}
   .pill{font-size:11px;color:var(--muted)}
   .search{flex:1;min-width:200px}
   .row-actions button{padding:4px 9px;font-size:12px}
@@ -88,9 +89,10 @@
   <!-- CLIENTS -->
   <div id="view-clients">
     <div class="note">
-      <b>Client list is driven by the Drive folders</b> in <i>Weekly Dashboards</i> (45 folders).
+      <b>Client list is seeded from the Drive folders</b> in <i>Weekly Dashboards</i> (45 folders), plus any clients you add here for training-only tracking.
       <span class="b-sheet badge">On Cindy's sheet</span> = was on the original training schedule.
       <span class="b-folder badge">Folder only</span> = has a dashboard folder but wasn't on Cindy's training list (often camera-only) — confirm before treating as a training client.
+      <span class="b-nodash badge">No dashboard</span> = added here for training tracking only; no Drive dashboard folder. New dashboard clients are synced in automatically during onboarding.
     </div>
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <input class="search" id="q" placeholder="Search clients…" oninput="renderClients()">
@@ -98,6 +100,7 @@
         <option value="all">All clients</option>
         <option value="sheet">On Cindy's sheet</option>
         <option value="folder">Folder only</option>
+        <option value="nodash">No dashboard</option>
       </select>
       <button class="primary" onclick="addClient()">+ Add client</button>
     </div>
@@ -741,6 +744,8 @@ function load(){
   try{ const s=localStorage.getItem(KEY); data = s?JSON.parse(s):structuredClone(SEED); }
   catch(e){ data=structuredClone(SEED); }
   if(!data.curriculum||!data.clients){ data=structuredClone(SEED); }
+  // migrate older data: a client has a dashboard if it has a Drive folder id
+  data.clients.forEach(c=>{ if(c.hasDashboard===undefined) c.hasDashboard = !!c.folderId; });
 }
 function save(){
   localStorage.setItem(KEY, JSON.stringify(data));
@@ -764,29 +769,36 @@ function clientProgress(c){
 }
 function renderStats(){
   const sheet=data.clients.filter(c=>c.onSheet).length;
+  const folderOnly=data.clients.filter(c=>c.hasDashboard&&!c.onSheet).length;
+  const noDash=data.clients.filter(c=>!c.hasDashboard).length;
   const sent=data.curriculum.filter(t=>t.status.startsWith("✓")).length;
   document.getElementById('stats').innerHTML=`
-    <div class="stat"><div class="n">${data.clients.length}</div><div class="l">Clients (folders)</div></div>
+    <div class="stat"><div class="n">${data.clients.length}</div><div class="l">Clients total</div></div>
     <div class="stat"><div class="n">${sheet}</div><div class="l">On Cindy's sheet</div></div>
-    <div class="stat"><div class="n">${data.clients.length-sheet}</div><div class="l">Folder only</div></div>
+    <div class="stat"><div class="n">${folderOnly}</div><div class="l">Folder only</div></div>
+    <div class="stat"><div class="n">${noDash}</div><div class="l">No dashboard</div></div>
     <div class="stat"><div class="n">${data.curriculum.length}</div><div class="l">Curriculum months</div></div>
     <div class="stat"><div class="n">${sent}</div><div class="l">Topics sent</div></div>`;
+}
+function sourceBadge(c){
+  if(!c.hasDashboard) return '<span class="badge b-nodash">No dashboard</span>';
+  return c.onSheet?'<span class="badge b-sheet">On sheet</span>':'<span class="badge b-folder">Folder only</span>';
 }
 function renderClients(){
   const q=(document.getElementById('q').value||"").toLowerCase();
   const f=document.getElementById('filt').value;
   const rows=data.clients.map((c,idx)=>({c,idx}))
-    .filter(({c})=> (f==="all"||(f==="sheet"&&c.onSheet)||(f==="folder"&&!c.onSheet)))
+    .filter(({c})=> (f==="all"||(f==="sheet"&&c.onSheet)||(f==="folder"&&c.hasDashboard&&!c.onSheet)||(f==="nodash"&&!c.hasDashboard)))
     .filter(({c})=> !q || c.name.toLowerCase().includes(q) || c.folder.toLowerCase().includes(q))
     .sort((a,b)=>a.c.name.localeCompare(b.c.name));
   document.getElementById('clients-body').innerHTML = rows.map(({c,idx})=>{
     const p=clientProgress(c);
     return `<tr>
       <td><b>${esc(c.name)}</b></td>
-      <td><span class="pill">${esc(c.folder)}</span></td>
+      <td>${c.folder?`<span class="pill">${esc(c.folder)}</span>`:'<span class="muted">—</span>'}</td>
       <td>${esc(c.track)}</td>
       <td>${esc(c.contact)}</td>
-      <td>${c.onSheet?'<span class="badge b-sheet">On sheet</span>':'<span class="badge b-folder">Folder only</span>'}</td>
+      <td>${sourceBadge(c)}</td>
       <td><span class="prog"><i style="width:${p}%"></i></span> <span class="muted">${p}%</span></td>
       <td class="row-actions"><button onclick="openClient(${idx})">Schedule</button> <button class="danger" onclick="delClient(${idx})">✕</button></td>
     </tr>`;
@@ -833,9 +845,8 @@ function saveDlg(){
   save(); document.getElementById('dlg').close(); renderClients(); renderStats();
 }
 function addClient(){
-  const name=prompt("New client display name?"); if(!name)return;
-  const folder=prompt("Folder / repo slug (hyphenated, e.g. New-Client)?",name.replace(/\s+/g,'-'));
-  data.clients.push({folder:folder||name,folderId:"",name,track:"Standard Track",contact:"Cindy Simpson",onSheet:false,startMonth:"",overrides:{}});
+  const name=prompt("New client display name? (training tracking only — no Drive dashboard)"); if(!name)return;
+  data.clients.push({folder:"",folderId:"",name,track:"Standard Track",contact:"Cindy Simpson",onSheet:false,hasDashboard:false,startMonth:"",overrides:{}});
   save(); renderClients(); renderStats();
 }
 function delClient(i){ if(confirm("Remove "+data.clients[i].name+" from the schedule app? (does not touch Drive)")){ data.clients.splice(i,1); save(); renderClients(); renderStats(); } }
