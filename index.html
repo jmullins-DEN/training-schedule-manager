@@ -746,6 +746,9 @@ function load(){
   if(!data.curriculum||!data.clients){ data=structuredClone(SEED); }
   // migrate older data: a client has a dashboard if it has a Drive folder id
   data.clients.forEach(c=>{ if(c.hasDashboard===undefined) c.hasDashboard = !!c.folderId; });
+  // merge in any new seed clients added during onboarding, without clobbering local edits
+  const have=new Set(data.clients.map(c=>(c.folder||c.name).toLowerCase()));
+  SEED.clients.forEach(sc=>{ const k=(sc.folder||sc.name).toLowerCase(); if(!have.has(k)){ data.clients.push(structuredClone(sc)); } });
 }
 function save(){
   localStorage.setItem(KEY, JSON.stringify(data));
