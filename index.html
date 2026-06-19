@@ -6,53 +6,85 @@
 <title>DEN Training Schedule Manager</title>
 <style>
   :root{
-    --bg:#0f1419; --panel:#1a2230; --panel2:#222c3d; --line:#2e3a4d;
-    --text:#e6edf5; --muted:#8a99ad; --accent:#4f9cf9; --green:#3fb950;
-    --amber:#d29922; --purple:#a371f7; --red:#f85149;
+    --bg:#eef1f6; --card:#ffffff; --line:#e4e9f1;
+    --navy:#16264d; --navy2:#1e335f; --navyhover:#243f73;
+    --text:#1f2a3d; --muted:#6b7891; --accent:#2f6fed; --cta:#f97316;
+    --green:#16a34a; --amber:#d97706; --purple:#7c3aed; --red:#dc2626;
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
        background:var(--bg);color:var(--text);font-size:14px;line-height:1.45}
-  header{background:linear-gradient(135deg,#1a2230,#101620);padding:18px 24px;border-bottom:1px solid var(--line);
-         display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;position:sticky;top:0;z-index:20}
-  header h1{margin:0;font-size:19px;font-weight:650}
-  header .sub{color:var(--muted);font-size:12px;margin-top:2px}
+  .app{display:flex;min-height:100vh}
+
+  /* sidebar */
+  .sidebar{width:224px;flex-shrink:0;background:var(--navy);color:#cdd7ea;display:flex;flex-direction:column;
+           position:sticky;top:0;height:100vh}
+  .brand{padding:20px 20px 18px;font-weight:700;font-size:16px;color:#fff;letter-spacing:.3px;
+         border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:9px}
+  .brand .dot{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#4f9cf9,#2f6fed);flex-shrink:0}
+  .sidebar nav{padding:12px 10px;display:flex;flex-direction:column;gap:2px}
+  .sidebar .nav-h{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:#7e8db0;padding:10px 12px 4px}
+  .sidebar button.nav{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;
+         border-radius:8px;padding:10px 12px;color:#cdd7ea;font-size:14px;font-weight:550;cursor:pointer}
+  .sidebar button.nav:hover{background:var(--navyhover);color:#fff}
+  .sidebar button.nav.active{background:var(--navy2);color:#fff;box-shadow:inset 3px 0 0 var(--accent)}
+  .side-foot{margin-top:auto;padding:14px 12px;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:7px}
+  .side-foot button{background:rgba(255,255,255,.06);color:#cdd7ea;border:1px solid rgba(255,255,255,.1);border-radius:7px;
+         padding:8px 11px;font-size:12.5px;cursor:pointer;font-weight:550;text-align:left}
+  .side-foot button:hover{background:rgba(255,255,255,.12);color:#fff}
+  .side-foot button.danger{color:#ffb4ad}
+
+  /* main */
+  main{flex:1;min-width:0;padding:22px 28px 60px}
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+  .topbar h1{margin:0;font-size:21px;font-weight:700}
+  .topbar .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
   .toolbar{display:flex;gap:8px;flex-wrap:wrap}
-  button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:7px;
+  button{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:8px;
          padding:8px 13px;font-size:13px;cursor:pointer;font-weight:550}
-  button:hover{border-color:var(--accent)}
+  button:hover{border-color:var(--accent);color:var(--accent)}
   button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-  button.danger{color:var(--red)}
-  .wrap{max-width:1280px;margin:0 auto;padding:20px 24px 60px}
-  .stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}
-  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 18px;min-width:130px}
-  .stat .n{font-size:24px;font-weight:700}
-  .stat .l{color:var(--muted);font-size:12px;margin-top:2px}
-  .tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line)}
-  .tabs button{background:none;border:none;border-bottom:2px solid transparent;border-radius:0;padding:10px 16px;color:var(--muted)}
-  .tabs button.active{color:var(--text);border-bottom-color:var(--accent)}
-  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
-  th{background:var(--panel2);color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+  button.primary:hover{background:#255fd6;color:#fff}
+  button.cta{background:var(--cta);border-color:var(--cta);color:#fff}
+  button.cta:hover{background:#ea6a0c;color:#fff}
+  button.danger{color:var(--red);border-color:var(--line)}
+  button.danger:hover{border-color:var(--red);color:var(--red)}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 18px;
+        box-shadow:0 1px 2px rgba(20,40,80,.04);position:relative;overflow:hidden}
+  .stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent);opacity:.85}
+  .stat:nth-child(2)::before{background:var(--accent)}
+  .stat:nth-child(3)::before{background:var(--muted)}
+  .stat:nth-child(4)::before{background:var(--amber)}
+  .stat:nth-child(5)::before{background:var(--purple)}
+  .stat:nth-child(6)::before{background:var(--green)}
+  .stat .n{font-size:26px;font-weight:700;line-height:1}
+  .stat .l{color:var(--muted);font-size:12px;margin-top:6px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 2px rgba(20,40,80,.04);overflow:hidden}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{background:#f7f9fc;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
   tr:last-child td{border-bottom:none}
-  tr:hover td{background:#1e2735}
-  input,select{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:13px;font-family:inherit}
-  input:focus,select:focus{outline:none;border-color:var(--accent)}
-  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
-  .b-sent{background:rgba(63,185,80,.15);color:var(--green)}
-  .b-up{background:rgba(210,153,34,.15);color:var(--amber)}
-  .b-rep{background:rgba(163,113,247,.15);color:var(--purple)}
-  .b-sheet{background:rgba(79,156,249,.15);color:var(--accent)}
-  .b-folder{background:rgba(138,153,173,.15);color:var(--muted)}
-  .b-nodash{background:rgba(210,153,34,.12);color:var(--amber)}
-  .pill{font-size:11px;color:var(--muted)}
+  tbody tr:hover td{background:#f5f8fe}
+  input,select{background:#fff;color:var(--text);border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit}
+  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,111,237,.12)}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+  .b-sent{background:rgba(22,163,74,.12);color:var(--green)}
+  .b-up{background:rgba(217,119,6,.13);color:var(--amber)}
+  .b-rep{background:rgba(124,58,237,.12);color:var(--purple)}
+  .b-sheet{background:rgba(47,111,237,.12);color:var(--accent)}
+  .b-folder{background:rgba(107,120,145,.14);color:var(--muted)}
+  .b-nodash{background:rgba(217,119,6,.12);color:var(--amber)}
+  .pill{font-size:11px;color:var(--muted);background:#f1f4f9;padding:2px 8px;border-radius:6px}
   .search{flex:1;min-width:200px}
-  .row-actions button{padding:4px 9px;font-size:12px}
+  .row-actions button{padding:5px 10px;font-size:12px}
   .muted{color:var(--muted)}
-  .prog{height:6px;background:var(--bg);border-radius:4px;overflow:hidden;width:90px;display:inline-block;vertical-align:middle}
+  .prog{height:7px;background:#eaeef5;border-radius:4px;overflow:hidden;width:90px;display:inline-block;vertical-align:middle}
   .prog>i{display:block;height:100%;background:var(--green)}
-  dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:0;max-width:560px;width:92%}
-  dialog::backdrop{background:rgba(0,0,0,.6)}
+  dialog{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0;max-width:560px;width:92%;box-shadow:0 24px 60px rgba(20,40,80,.25)}
+  dialog::backdrop{background:rgba(15,25,50,.45)}
   .dlg-h{padding:16px 20px;border-bottom:1px solid var(--line);font-weight:650;font-size:16px}
   .dlg-b{padding:20px;max-height:64vh;overflow:auto}
   .dlg-f{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
@@ -60,31 +92,40 @@
   .fld label{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
   .fld input,.fld select{width:100%}
   .save-state{font-size:12px;color:var(--muted)}
-  .note{background:rgba(79,156,249,.08);border:1px solid rgba(79,156,249,.3);border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:13px;color:var(--text)}
+  .note{background:rgba(47,111,237,.06);border:1px solid rgba(47,111,237,.22);border-radius:10px;padding:11px 15px;margin-bottom:18px;font-size:13px;color:var(--text)}
   a{color:var(--accent)}
+  @media(max-width:720px){.sidebar{width:64px}.brand span,.sidebar .nav-h,.sidebar button.nav span,.side-foot{display:none}}
 </style>
 </head>
 <body>
-<header>
-  <div>
-    <h1>DEN Training Schedule Manager</h1>
-    <div class="sub">Standard Track curriculum &amp; per-client scheduling &bull; <span id="lastsave" class="save-state">loading…</span></div>
-  </div>
-  <div class="toolbar">
-    <button onclick="exportJSON()">⬇ Export JSON</button>
-    <button onclick="document.getElementById('imp').click()">⬆ Import JSON</button>
-    <input type="file" id="imp" accept="application/json" style="display:none" onchange="importJSON(event)">
-    <button class="danger" onclick="resetData()">Reset to seed</button>
-  </div>
-</header>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="dot"></span><span>DEN Training</span></div>
+    <nav>
+      <div class="nav-h">Manage</div>
+      <button id="tab-clients" class="nav active" onclick="showTab('clients')">👥 <span>Clients</span></button>
+      <button id="tab-curriculum" class="nav" onclick="showTab('curriculum')">📘 <span>Curriculum</span></button>
+    </nav>
+    <div class="side-foot">
+      <button onclick="exportJSON()">⬇ Export JSON</button>
+      <button onclick="document.getElementById('imp').click()">⬆ Import JSON</button>
+      <input type="file" id="imp" accept="application/json" style="display:none" onchange="importJSON(event)">
+      <button class="danger" onclick="resetData()">Reset to seed</button>
+    </div>
+  </aside>
 
-<div class="wrap">
-  <div class="stats" id="stats"></div>
+  <main>
+    <div class="topbar">
+      <div>
+        <h1>Training Schedule Manager</h1>
+        <div class="sub">Standard Track curriculum &amp; per-client scheduling &bull; <span id="lastsave" class="save-state">loading…</span></div>
+      </div>
+      <div class="toolbar">
+        <button class="cta" onclick="addClient()">+ Add client</button>
+      </div>
+    </div>
 
-  <div class="tabs">
-    <button id="tab-clients" class="active" onclick="showTab('clients')">Clients</button>
-    <button id="tab-curriculum" onclick="showTab('curriculum')">Curriculum (Standard Track)</button>
-  </div>
+    <div class="stats" id="stats"></div>
 
   <!-- CLIENTS -->
   <div id="view-clients">
@@ -102,7 +143,6 @@
         <option value="folder">Folder only</option>
         <option value="nodash">No dashboard</option>
       </select>
-      <button class="primary" onclick="addClient()">+ Add client</button>
     </div>
     <table>
       <thead><tr><th>Client</th><th>Folder</th><th>Track</th><th>Contact</th><th>Source</th><th>Progress</th><th></th></tr></thead>
@@ -119,6 +159,7 @@
       <tbody id="cur-body"></tbody>
     </table>
   </div>
+  </main>
 </div>
 
 <!-- client detail dialog -->
