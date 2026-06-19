@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEN Training Schedule Manager</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2230; --panel2:#222c3d; --line:#2e3a4d;
+    --text:#e6edf5; --muted:#8a99ad; --accent:#4f9cf9; --green:#3fb950;
+    --amber:#d29922; --purple:#a371f7; --red:#f85149;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--text);font-size:14px;line-height:1.45}
+  header{background:linear-gradient(135deg,#1a2230,#101620);padding:18px 24px;border-bottom:1px solid var(--line);
+         display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;position:sticky;top:0;z-index:20}
+  header h1{margin:0;font-size:19px;font-weight:650}
+  header .sub{color:var(--muted);font-size:12px;margin-top:2px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+  button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:7px;
+         padding:8px 13px;font-size:13px;cursor:pointer;font-weight:550}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.danger{color:var(--red)}
+  .wrap{max-width:1280px;margin:0 auto;padding:20px 24px 60px}
+  .stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 18px;min-width:130px}
+  .stat .n{font-size:24px;font-weight:700}
+  .stat .l{color:var(--muted);font-size:12px;margin-top:2px}
+  .tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+  .tabs button{background:none;border:none;border-bottom:2px solid transparent;border-radius:0;padding:10px 16px;color:var(--muted)}
+  .tabs button.active{color:var(--text);border-bottom-color:var(--accent)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{background:var(--panel2);color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#1e2735}
+  input,select{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:13px;font-family:inherit}
+  input:focus,select:focus{outline:none;border-color:var(--accent)}
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+  .b-sent{background:rgba(63,185,80,.15);color:var(--green)}
+  .b-up{background:rgba(210,153,34,.15);color:var(--amber)}
+  .b-rep{background:rgba(163,113,247,.15);color:var(--purple)}
+  .b-sheet{background:rgba(79,156,249,.15);color:var(--accent)}
+  .b-folder{background:rgba(138,153,173,.15);color:var(--muted)}
+  .pill{font-size:11px;color:var(--muted)}
+  .search{flex:1;min-width:200px}
+  .row-actions button{padding:4px 9px;font-size:12px}
+  .muted{color:var(--muted)}
+  .prog{height:6px;background:var(--bg);border-radius:4px;overflow:hidden;width:90px;display:inline-block;vertical-align:middle}
+  .prog>i{display:block;height:100%;background:var(--green)}
+  dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:0;max-width:560px;width:92%}
+  dialog::backdrop{background:rgba(0,0,0,.6)}
+  .dlg-h{padding:16px 20px;border-bottom:1px solid var(--line);font-weight:650;font-size:16px}
+  .dlg-b{padding:20px;max-height:64vh;overflow:auto}
+  .dlg-f{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+  .fld{margin-bottom:14px}
+  .fld label{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
+  .fld input,.fld select{width:100%}
+  .save-state{font-size:12px;color:var(--muted)}
+  .note{background:rgba(79,156,249,.08);border:1px solid rgba(79,156,249,.3);border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:13px;color:var(--text)}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>DEN Training Schedule Manager</h1>
+    <div class="sub">Standard Track curriculum &amp; per-client scheduling &bull; <span id="lastsave" class="save-state">loading…</span></div>
+  </div>
+  <div class="toolbar">
+    <button onclick="exportJSON()">⬇ Export JSON</button>
+    <button onclick="document.getElementById('imp').click()">⬆ Import JSON</button>
+    <input type="file" id="imp" accept="application/json" style="display:none" onchange="importJSON(event)">
+    <button class="danger" onclick="resetData()">Reset to seed</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stats" id="stats"></div>
+
+  <div class="tabs">
+    <button id="tab-clients" class="active" onclick="showTab('clients')">Clients</button>
+    <button id="tab-curriculum" onclick="showTab('curriculum')">Curriculum (Standard Track)</button>
+  </div>
+
+  <!-- CLIENTS -->
+  <div id="view-clients">
+    <div class="note">
+      <b>Client list is driven by the Drive folders</b> in <i>Weekly Dashboards</i> (45 folders).
+      <span class="b-sheet badge">On Cindy's sheet</span> = was on the original training schedule.
+      <span class="b-folder badge">Folder only</span> = has a dashboard folder but wasn't on Cindy's training list (often camera-only) — confirm before treating as a training client.
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <input class="search" id="q" placeholder="Search clients…" oninput="renderClients()">
+      <select id="filt" onchange="renderClients()">
+        <option value="all">All clients</option>
+        <option value="sheet">On Cindy's sheet</option>
+        <option value="folder">Folder only</option>
+      </select>
+      <button class="primary" onclick="addClient()">+ Add client</button>
+    </div>
+    <table>
+      <thead><tr><th>Client</th><th>Folder</th><th>Track</th><th>Contact</th><th>Source</th><th>Progress</th><th></th></tr></thead>
+      <tbody id="clients-body"></tbody>
+    </table>
+  </div>
+
+  <!-- CURRICULUM -->
+  <div id="view-curriculum" style="display:none">
+    <div class="note">The shared <b>Standard Track</b> curriculum. Editing a topic's status here is the default for every client; individual clients can override their own status from the client detail view.</div>
+    <button class="primary" style="margin-bottom:12px" onclick="addTopic()">+ Add month</button>
+    <table>
+      <thead><tr><th style="width:50px">#</th><th>Month</th><th>Training Topic</th><th>Status</th><th></th></tr></thead>
+      <tbody id="cur-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- client detail dialog -->
+<dialog id="dlg">
+  <div class="dlg-h" id="dlg-h">Client</div>
+  <div class="dlg-b" id="dlg-b"></div>
+  <div class="dlg-f">
+    <button onclick="document.getElementById('dlg').close()">Close</button>
+    <button class="primary" onclick="saveDlg()">Save</button>
+  </div>
+</dialog>
+
+<script>
+const SEED = {
+  "curriculum": [
+    {
+      "n": 1,
+      "month": "Jan 2026",
+      "topic": "Alert Driving",
+      "status": "✓ Sent"
+    },
+    {
+      "n": 2,
+      "month": "Feb 2026",
+      "topic": "Safe Lifting",
+      "status": "✓ Sent"
+    },
+    {
+      "n": 3,
+      "month": "Mar 2026",
+      "topic": "Drowsy Driving",
+      "status": "✓ Sent"
+    },
+    {
+      "n": 4,
+      "month": "Apr 2026",
+      "topic": "Space Management",
+      "status": "✓ Sent"
+    },
+    {
+      "n": 5,
+      "month": "May 2026",
+      "topic": "Rules for Safe Driving",
+      "status": "Upcoming"
+    },
+    {
+      "n": 6,
+      "month": "Jun 2026",
+      "topic": "Speed Management",
+      "status": "Upcoming"
+    },
+    {
+      "n": 7,
+      "month": "Jul 2026",
+      "topic": "Driver Health",
+      "status": "Upcoming"
+    },
+    {
+      "n": 8,
+      "month": "Aug 2026",
+      "topic": "Distracted Driving",
+      "status": "Upcoming"
+    },
+    {
+      "n": 9,
+      "month": "Sep 2026",
+      "topic": "In Cab Distractions",
+      "status": "Upcoming"
+    },
+    {
+      "n": 10,
+      "month": "Oct 2026",
+      "topic": "Safe Backing",
+      "status": "Upcoming"
+    },
+    {
+      "n": 11,
+      "month": "Nov 2026",
+      "topic": "Safe Railroad Crossing",
+      "status": "Upcoming"
+    },
+    {
+      "n": 12,
+      "month": "Dec 2026",
+      "topic": "Holiday Driving",
+      "status": "Upcoming"
+    },
+    {
+      "n": 13,
+      "month": "Jan 2027",
+      "topic": "Winter Driving",
+      "status": "Upcoming"
+    },
+    {
+      "n": 14,
+      "month": "Feb 2027",
+      "topic": "Workzone Safety",
+      "status": "Upcoming"
+    },
+    {
+      "n": 15,
+      "month": "Mar 2027",
+      "topic": "Vehicle Inspection",
+      "status": "Upcoming"
+    },
+    {
+      "n": 16,
+      "month": "Apr 2027",
+      "topic": "Scene of an Accident",
+      "status": "Upcoming"
+    },
+    {
+      "n": 17,
+      "month": "May 2027",
+      "topic": "3 Points of Contact",
+      "status": "Upcoming"
+    },
+    {
+      "n": 18,
+      "month": "Jun 2027",
+      "topic": "4 Clock Hours of Service",
+      "status": "Upcoming"
+    },
+    {
+      "n": 19,
+      "month": "Jul 2027",
+      "topic": "Hazcom for CDL Drivers",
+      "status": "Upcoming"
+    },
+    {
+      "n": 20,
+      "month": "Aug 2027",
+      "topic": "Fire Extinguisher Training for CDL Drivers",
+      "status": "Upcoming"
+    },
+    {
+      "n": 21,
+      "month": "Sep 2027",
+      "topic": "Alert Driving",
+      "status": "↻ Repeat"
+    },
+    {
+      "n": 22,
+      "month": "Oct 2027",
+      "topic": "Drowsy Driving",
+      "status": "↻ Repeat"
+    },
+    {
+      "n": 23,
+      "month": "Nov 2027",
+      "topic": "Space Management",
+      "status": "↻ Repeat"
+    }
+  ],
+  "clients": [
+    {
+      "name": "3L-Solutions",
+      "folder": "3L-Solutions",
+      "folderId": "18L8uOBhdXgpLgcfJjW0A2hG5VLKTic2H",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Agra-Trucking",
+      "folder": "Agra-Trucking",
+      "folderId": "11W96i_zaBS1UTc8xZUw2YoPoNkLTzwGw",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Alandon-Tow-Service",
+      "folder": "Alandon-Tow-Service",
+      "folderId": "1K6lMjc0YJoew7GMvFNUB9gCHTMU3Q4bM",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "All-City-Tow",
+      "folder": "All-City-Tow",
+      "folderId": "1LG1cZuCMy97fYxT_6eFXy0NkdRhqeFaF",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "AllStar-Towing-and-Recovery",
+      "folder": "AllStar-Towing-and-Recovery",
+      "folderId": "1j8dQBAnVvUiWjifTY5tOQZcpqeJRE4P0",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "AN-Transport",
+      "folder": "AN-Transport",
+      "folderId": "1ZKfrAgaZkK6TFxSZcflLO0DiO-WPQTeT",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Andrew-Distribution",
+      "folder": "Andrew-Distribution",
+      "folderId": "1ctcBf35xROA7kUZSRWEnC7fqQ-pNNzlU",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "apple-towing",
+      "folder": "apple-towing",
+      "folderId": "1uKDW2_XDDPJWOW9q1rYwK_79bc5dq9Vo",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "ASAP",
+      "folder": "ASAP",
+      "folderId": "17MV3-p10ErU1ZTvnBbTRL7ep55ZImqgx",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Atlantic-Foods",
+      "folder": "Atlantic-Foods",
+      "folderId": "15e2Ds8TvrHesAjIlzX7o52chT8sWC0xw",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "ATR",
+      "folder": "ATR",
+      "folderId": "1tRxw5bRcEWKAmg-fpZepnQbUEkmR1sXc",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Brads-Towing",
+      "folder": "Brads-Towing",
+      "folderId": "1CnEvUzOCErxY7GqS0_5W5AzljFG9Ja5U",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Carolina-Floor-Systems",
+      "folder": "Carolina-Floor-Systems",
+      "folderId": "1rB-a7EgGeNeNTB9_Sa1Ad939Erfo4kCO",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Chacon-Towing",
+      "folder": "Chacon-Towing",
+      "folderId": "1OwLOKkNpkTtsoLfyYcFkh_W2xSZRMpQS",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Colorado-Drywall-Supply",
+      "folder": "Colorado-Drywall-Supply",
+      "folderId": "1IrmEtPFqofyIiazFtKbwZWkCpUO6aSVp",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Columbus-Daylighting",
+      "folder": "Columbus-Daylighting",
+      "folderId": "12saEVa_kZPzge2rwQ1agFbJsbUlj7XW3",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Curtis-Garage-Wrecker-Service",
+      "folder": "Curtis-Garage-Wrecker-Service",
+      "folderId": "1pFePdYFPk8HO8qGb1-m9dshLgkqqreYf",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "DCPS",
+      "folder": "DCPS",
+      "folderId": "1TZ12Rptkfw1mO4Hyj1zEqNv_eQf3Al2-",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Edingtons",
+      "folder": "Edingtons",
+      "folderId": "1mfG5xSLBpnBld0NWc3DP7HsPXcZOvi_Z",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Express-Tow",
+      "folder": "Express-Tow",
+      "folderId": "1yKqk3lrK7BrFNqeglCNxW8ihcMIU4ns3",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Fiore-and-Sons",
+      "folder": "Fiore-and-Sons",
+      "folderId": "1UZnhnwuyZQkpqYHtfPaU23y5jOlNeMZk",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Five-Aces",
+      "folder": "Five-Aces",
+      "folderId": "1TkXzcYD0_UejWZYrP0idyeuBdCr89JxB",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Food-Bank",
+      "folder": "Food-Bank",
+      "folderId": "1alAwZg2NBa6giCSU9O6WWfLRqFVP8E8E",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Home-Motors",
+      "folder": "Home-Motors ",
+      "folderId": "1A1NXAYq6idoxUhNP3UVmPHcw1mvx8w_a",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Indigo-Construction",
+      "folder": "Indigo-Construction",
+      "folderId": "15DvQhYzf8EC3Kb5QARgZxGePj0mg1GIf",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Maces",
+      "folder": "Maces",
+      "folderId": "1zYPZlciP84KyX_Mg_7DEqz0AXKaLZGfN",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "mericles",
+      "folder": "mericles",
+      "folderId": "1BKE2GhlCdrd4uIvEbaqLypOovL9Pp_Pp",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Mission-Wrecker",
+      "folder": "Mission-Wrecker",
+      "folderId": "1xOBN8S6NWIr5zu36YrR8Nlx2GGTL7TOo",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Mott-s-Wrecker-Service",
+      "folder": "Mott-s-Wrecker-Service",
+      "folderId": "1PxpHWf291GxcSY5iCgm5o-LapbR8v76q",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "neal-pool",
+      "folder": "neal-pool",
+      "folderId": "1CfjscMuhAn1MYxwtYIZxceZYNd7BgSce",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Panchos",
+      "folder": "Panchos",
+      "folderId": "16GRhXs_3KDdaSnhWa0qYaT2YJAQ0r5hf",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "panhandle-express",
+      "folder": "panhandle-express",
+      "folderId": "1D3PNV9rReLCcvoG1j6Nn6sYRTmWiW_FO",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "PCS-Trucking",
+      "folder": "PCS-Trucking",
+      "folderId": "13Sd-gaqOUIbE2ye5NZYrU80VmEtJRcdB",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Pep-Move",
+      "folder": "Pep-Move",
+      "folderId": "1F-xdtMfa5Kw7XM8k6_LLSM9v7PiUvLmw",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Priority-Towing",
+      "folder": "Priority-Towing",
+      "folderId": "1oq1Iqd6Edmno-Q5QZ-quvrxcoyLmd1Ob",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Pyramid-Logistics",
+      "folder": "Pyramid-Logistics",
+      "folderId": "1wK45b3DXmgNt9BLHdogTIyNPk8ENaf6w",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Reed-Beverage",
+      "folder": "Reed-Beverage",
+      "folderId": "10xbRTO-32QNK8SOJsbS77QfwZ1DnTlpE",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Salt-Creek-Logistics",
+      "folder": "Salt-Creek-Logistics",
+      "folderId": "1kc2g9vnbWvipCWNTGDiwpa-QZD13dnCc",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "STAC-Services",
+      "folder": "STAC-Services",
+      "folderId": "1ESiAHInwYkzE1Ql08heSG2kzXW5LTCai",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Starkey-Trash-Service",
+      "folder": "Starkey-Trash-Service",
+      "folderId": "1upQsf8-1_pqUDnCS3dZWpTTGk0LNUDa4",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "t-miller",
+      "folder": "t-miller",
+      "folderId": "1rZkPPuxo7p2V8koQlig3o58aCmzRXFqJ",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Texas-Towing",
+      "folder": "Texas-Towing",
+      "folderId": "198sAWMZQamQuG2gar5-ryY0729HW-oOE",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "The-Electric-Light-and-Power-Company",
+      "folder": "The-Electric-Light-and-Power-Company",
+      "folderId": "1ltkPqjhm1FX2MITOIGWoYXPE_M7urVKQ",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "tnt-wrecker",
+      "folder": "tnt-wrecker",
+      "folderId": "1h5fGM_iJV7pqfKc7srlOinv9QqIJsU1k",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "voyager",
+      "folder": "voyager",
+      "folderId": "13s95cotTCli8w-M3mO0jHlPiceFT4o00",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    }
+  ],
+  "generated": "2026-06-19",
+  "source": {
+    "sheetId": "1jDD_g9tzGNeg-vs6hnTpmcQ5I1zqb6yRT7Kuu823D-0",
+    "foldersParent": "1Wjxd5hoozZzW4JcDQBBlFY60F8I1TiM5"
+  },
+  "meta": {
+    "sheetClients": 25,
+    "folders": 45,
+    "onSheet": 19
+  }
+};
+const KEY = "den-training-schedule-v1";
+const STATUSES = ["✓ Sent","Upcoming","↻ Repeat","N/A"];
+let data, editIdx=-1;
+
+function load(){
+  try{ const s=localStorage.getItem(KEY); data = s?JSON.parse(s):structuredClone(SEED); }
+  catch(e){ data=structuredClone(SEED); }
+  if(!data.curriculum||!data.clients){ data=structuredClone(SEED); }
+}
+function save(){
+  localStorage.setItem(KEY, JSON.stringify(data));
+  const d=new Date();
+  document.getElementById('lastsave').textContent="saved "+d.toLocaleTimeString();
+}
+function badgeFor(st){
+  if(st.startsWith("✓")) return '<span class="badge b-sent">'+st+'</span>';
+  if(st.startsWith("↻")) return '<span class="badge b-rep">'+st+'</span>';
+  if(st==="N/A") return '<span class="badge b-folder">N/A</span>';
+  return '<span class="badge b-up">'+st+'</span>';
+}
+function effStatus(client,i){
+  if(client.overrides && client.overrides[i]!=null) return client.overrides[i];
+  return data.curriculum[i].status;
+}
+function clientProgress(c){
+  let sent=0,tot=0;
+  data.curriculum.forEach((t,i)=>{ const s=effStatus(c,i); if(s!=="N/A"){tot++; if(s.startsWith("✓"))sent++;} });
+  return tot?Math.round(100*sent/tot):0;
+}
+function renderStats(){
+  const sheet=data.clients.filter(c=>c.onSheet).length;
+  const sent=data.curriculum.filter(t=>t.status.startsWith("✓")).length;
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><div class="n">${data.clients.length}</div><div class="l">Clients (folders)</div></div>
+    <div class="stat"><div class="n">${sheet}</div><div class="l">On Cindy's sheet</div></div>
+    <div class="stat"><div class="n">${data.clients.length-sheet}</div><div class="l">Folder only</div></div>
+    <div class="stat"><div class="n">${data.curriculum.length}</div><div class="l">Curriculum months</div></div>
+    <div class="stat"><div class="n">${sent}</div><div class="l">Topics sent</div></div>`;
+}
+function renderClients(){
+  const q=(document.getElementById('q').value||"").toLowerCase();
+  const f=document.getElementById('filt').value;
+  const rows=data.clients.map((c,idx)=>({c,idx}))
+    .filter(({c})=> (f==="all"||(f==="sheet"&&c.onSheet)||(f==="folder"&&!c.onSheet)))
+    .filter(({c})=> !q || c.name.toLowerCase().includes(q) || c.folder.toLowerCase().includes(q))
+    .sort((a,b)=>a.c.name.localeCompare(b.c.name));
+  document.getElementById('clients-body').innerHTML = rows.map(({c,idx})=>{
+    const p=clientProgress(c);
+    return `<tr>
+      <td><b>${esc(c.name)}</b></td>
+      <td><span class="pill">${esc(c.folder)}</span></td>
+      <td>${esc(c.track)}</td>
+      <td>${esc(c.contact)}</td>
+      <td>${c.onSheet?'<span class="badge b-sheet">On sheet</span>':'<span class="badge b-folder">Folder only</span>'}</td>
+      <td><span class="prog"><i style="width:${p}%"></i></span> <span class="muted">${p}%</span></td>
+      <td class="row-actions"><button onclick="openClient(${idx})">Schedule</button> <button class="danger" onclick="delClient(${idx})">✕</button></td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="7" class="muted" style="text-align:center;padding:24px">No clients match.</td></tr>`;
+}
+function renderCurriculum(){
+  document.getElementById('cur-body').innerHTML = data.curriculum.map((t,i)=>`
+    <tr>
+      <td class="muted">${i+1}</td>
+      <td><input value="${esc(t.month)}" style="width:120px" onchange="curEdit(${i},'month',this.value)"></td>
+      <td><input value="${esc(t.topic)}" style="width:100%" onchange="curEdit(${i},'topic',this.value)"></td>
+      <td><select onchange="curEdit(${i},'status',this.value)">${STATUSES.map(s=>`<option ${s===t.status?'selected':''}>${s}</option>`).join("")}</select></td>
+      <td class="row-actions"><button class="danger" onclick="delTopic(${i})">✕</button></td>
+    </tr>`).join("");
+}
+function curEdit(i,k,v){ data.curriculum[i][k]=v; save(); if(k==='status'){renderStats();} }
+function addTopic(){ data.curriculum.push({n:data.curriculum.length+1,month:"New Month",topic:"New Topic",status:"Upcoming"}); save(); renderCurriculum(); renderStats(); }
+function delTopic(i){ if(confirm("Delete this curriculum month?")){ data.curriculum.splice(i,1); save(); renderCurriculum(); renderStats(); } }
+
+function openClient(idx){
+  editIdx=idx; const c=data.clients[idx];
+  document.getElementById('dlg-h').textContent=c.name+" — Schedule";
+  document.getElementById('dlg-b').innerHTML=`
+    <div class="fld"><label>Display name</label><input id="d-name" value="${esc(c.name)}"></div>
+    <div class="fld"><label>Schedule track</label><input id="d-track" value="${esc(c.track)}"></div>
+    <div class="fld"><label>Training contact</label><input id="d-contact" value="${esc(c.contact)}"></div>
+    <div class="fld"><label>Start month</label><input id="d-start" value="${esc(c.startMonth||'')}"></div>
+    <div class="fld"><label>Per-month status (overrides the curriculum default)</label>
+      <table><thead><tr><th>Month</th><th>Topic</th><th>Status</th></tr></thead><tbody>
+      ${data.curriculum.map((t,i)=>`<tr><td>${esc(t.month)}</td><td>${esc(t.topic)}</td>
+        <td><select data-i="${i}" class="ovr">
+          <option value="">— default (${t.status})</option>
+          ${STATUSES.map(s=>`<option ${ (c.overrides&&c.overrides[i]===s)?'selected':'' } value="${s}">${s}</option>`).join("")}
+        </select></td></tr>`).join("")}
+      </tbody></table>
+    </div>`;
+  document.getElementById('dlg').showModal();
+}
+function saveDlg(){
+  const c=data.clients[editIdx];
+  c.name=val('d-name'); c.track=val('d-track'); c.contact=val('d-contact'); c.startMonth=val('d-start');
+  c.overrides={};
+  document.querySelectorAll('#dlg-b .ovr').forEach(sel=>{ if(sel.value) c.overrides[sel.dataset.i]=sel.value; });
+  save(); document.getElementById('dlg').close(); renderClients(); renderStats();
+}
+function addClient(){
+  const name=prompt("New client display name?"); if(!name)return;
+  const folder=prompt("Folder / repo slug (hyphenated, e.g. New-Client)?",name.replace(/\s+/g,'-'));
+  data.clients.push({folder:folder||name,folderId:"",name,track:"Standard Track",contact:"Cindy Simpson",onSheet:false,startMonth:"",overrides:{}});
+  save(); renderClients(); renderStats();
+}
+function delClient(i){ if(confirm("Remove "+data.clients[i].name+" from the schedule app? (does not touch Drive)")){ data.clients.splice(i,1); save(); renderClients(); renderStats(); } }
+
+function showTab(t){
+  ['clients','curriculum'].forEach(x=>{
+    document.getElementById('view-'+x).style.display = x===t?'block':'none';
+    document.getElementById('tab-'+x).classList.toggle('active',x===t);
+  });
+}
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download="den-training-schedule.json"; a.click();
+}
+function importJSON(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader(); r.onload=()=>{ try{ data=JSON.parse(r.result); save(); renderAll(); alert("Imported."); }catch(err){ alert("Bad JSON: "+err); } }; r.readAsText(f);
+}
+function resetData(){ if(confirm("Discard local changes and reload the original seed data?")){ data=structuredClone(SEED); save(); renderAll(); } }
+function renderAll(){ renderStats(); renderClients(); renderCurriculum(); }
+function val(id){return document.getElementById(id).value;}
+function esc(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+
+load(); renderAll(); save();
+</script>
+</body>
+</html>

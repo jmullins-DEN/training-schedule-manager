@@ -1,0 +1,599 @@
+{
+  "curriculum": [
+    {
+      "n": 1,
+      "month": "Jan 2026",
+      "topic": "Alert Driving",
+      "status": "✓ Sent"
+    },
+    {
+      "n": 2,
+      "month": "Feb 2026",
+      "topic": "Safe Lifting",
+      "status": "✓ Sent"
+    },
+    {
+      "n": 3,
+      "month": "Mar 2026",
+      "topic": "Drowsy Driving",
+      "status": "✓ Sent"
+    },
+    {
+      "n": 4,
+      "month": "Apr 2026",
+      "topic": "Space Management",
+      "status": "✓ Sent"
+    },
+    {
+      "n": 5,
+      "month": "May 2026",
+      "topic": "Rules for Safe Driving",
+      "status": "Upcoming"
+    },
+    {
+      "n": 6,
+      "month": "Jun 2026",
+      "topic": "Speed Management",
+      "status": "Upcoming"
+    },
+    {
+      "n": 7,
+      "month": "Jul 2026",
+      "topic": "Driver Health",
+      "status": "Upcoming"
+    },
+    {
+      "n": 8,
+      "month": "Aug 2026",
+      "topic": "Distracted Driving",
+      "status": "Upcoming"
+    },
+    {
+      "n": 9,
+      "month": "Sep 2026",
+      "topic": "In Cab Distractions",
+      "status": "Upcoming"
+    },
+    {
+      "n": 10,
+      "month": "Oct 2026",
+      "topic": "Safe Backing",
+      "status": "Upcoming"
+    },
+    {
+      "n": 11,
+      "month": "Nov 2026",
+      "topic": "Safe Railroad Crossing",
+      "status": "Upcoming"
+    },
+    {
+      "n": 12,
+      "month": "Dec 2026",
+      "topic": "Holiday Driving",
+      "status": "Upcoming"
+    },
+    {
+      "n": 13,
+      "month": "Jan 2027",
+      "topic": "Winter Driving",
+      "status": "Upcoming"
+    },
+    {
+      "n": 14,
+      "month": "Feb 2027",
+      "topic": "Workzone Safety",
+      "status": "Upcoming"
+    },
+    {
+      "n": 15,
+      "month": "Mar 2027",
+      "topic": "Vehicle Inspection",
+      "status": "Upcoming"
+    },
+    {
+      "n": 16,
+      "month": "Apr 2027",
+      "topic": "Scene of an Accident",
+      "status": "Upcoming"
+    },
+    {
+      "n": 17,
+      "month": "May 2027",
+      "topic": "3 Points of Contact",
+      "status": "Upcoming"
+    },
+    {
+      "n": 18,
+      "month": "Jun 2027",
+      "topic": "4 Clock Hours of Service",
+      "status": "Upcoming"
+    },
+    {
+      "n": 19,
+      "month": "Jul 2027",
+      "topic": "Hazcom for CDL Drivers",
+      "status": "Upcoming"
+    },
+    {
+      "n": 20,
+      "month": "Aug 2027",
+      "topic": "Fire Extinguisher Training for CDL Drivers",
+      "status": "Upcoming"
+    },
+    {
+      "n": 21,
+      "month": "Sep 2027",
+      "topic": "Alert Driving",
+      "status": "↻ Repeat"
+    },
+    {
+      "n": 22,
+      "month": "Oct 2027",
+      "topic": "Drowsy Driving",
+      "status": "↻ Repeat"
+    },
+    {
+      "n": 23,
+      "month": "Nov 2027",
+      "topic": "Space Management",
+      "status": "↻ Repeat"
+    }
+  ],
+  "clients": [
+    {
+      "name": "3L-Solutions",
+      "folder": "3L-Solutions",
+      "folderId": "18L8uOBhdXgpLgcfJjW0A2hG5VLKTic2H",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Agra-Trucking",
+      "folder": "Agra-Trucking",
+      "folderId": "11W96i_zaBS1UTc8xZUw2YoPoNkLTzwGw",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Alandon-Tow-Service",
+      "folder": "Alandon-Tow-Service",
+      "folderId": "1K6lMjc0YJoew7GMvFNUB9gCHTMU3Q4bM",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "All-City-Tow",
+      "folder": "All-City-Tow",
+      "folderId": "1LG1cZuCMy97fYxT_6eFXy0NkdRhqeFaF",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "AllStar-Towing-and-Recovery",
+      "folder": "AllStar-Towing-and-Recovery",
+      "folderId": "1j8dQBAnVvUiWjifTY5tOQZcpqeJRE4P0",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "AN-Transport",
+      "folder": "AN-Transport",
+      "folderId": "1ZKfrAgaZkK6TFxSZcflLO0DiO-WPQTeT",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Andrew-Distribution",
+      "folder": "Andrew-Distribution",
+      "folderId": "1ctcBf35xROA7kUZSRWEnC7fqQ-pNNzlU",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "apple-towing",
+      "folder": "apple-towing",
+      "folderId": "1uKDW2_XDDPJWOW9q1rYwK_79bc5dq9Vo",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "ASAP",
+      "folder": "ASAP",
+      "folderId": "17MV3-p10ErU1ZTvnBbTRL7ep55ZImqgx",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Atlantic-Foods",
+      "folder": "Atlantic-Foods",
+      "folderId": "15e2Ds8TvrHesAjIlzX7o52chT8sWC0xw",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "ATR",
+      "folder": "ATR",
+      "folderId": "1tRxw5bRcEWKAmg-fpZepnQbUEkmR1sXc",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Brads-Towing",
+      "folder": "Brads-Towing",
+      "folderId": "1CnEvUzOCErxY7GqS0_5W5AzljFG9Ja5U",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Carolina-Floor-Systems",
+      "folder": "Carolina-Floor-Systems",
+      "folderId": "1rB-a7EgGeNeNTB9_Sa1Ad939Erfo4kCO",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Chacon-Towing",
+      "folder": "Chacon-Towing",
+      "folderId": "1OwLOKkNpkTtsoLfyYcFkh_W2xSZRMpQS",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Colorado-Drywall-Supply",
+      "folder": "Colorado-Drywall-Supply",
+      "folderId": "1IrmEtPFqofyIiazFtKbwZWkCpUO6aSVp",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Columbus-Daylighting",
+      "folder": "Columbus-Daylighting",
+      "folderId": "12saEVa_kZPzge2rwQ1agFbJsbUlj7XW3",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Curtis-Garage-Wrecker-Service",
+      "folder": "Curtis-Garage-Wrecker-Service",
+      "folderId": "1pFePdYFPk8HO8qGb1-m9dshLgkqqreYf",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "DCPS",
+      "folder": "DCPS",
+      "folderId": "1TZ12Rptkfw1mO4Hyj1zEqNv_eQf3Al2-",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Edingtons",
+      "folder": "Edingtons",
+      "folderId": "1mfG5xSLBpnBld0NWc3DP7HsPXcZOvi_Z",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Express-Tow",
+      "folder": "Express-Tow",
+      "folderId": "1yKqk3lrK7BrFNqeglCNxW8ihcMIU4ns3",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Fiore-and-Sons",
+      "folder": "Fiore-and-Sons",
+      "folderId": "1UZnhnwuyZQkpqYHtfPaU23y5jOlNeMZk",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Five-Aces",
+      "folder": "Five-Aces",
+      "folderId": "1TkXzcYD0_UejWZYrP0idyeuBdCr89JxB",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Food-Bank",
+      "folder": "Food-Bank",
+      "folderId": "1alAwZg2NBa6giCSU9O6WWfLRqFVP8E8E",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Home-Motors",
+      "folder": "Home-Motors ",
+      "folderId": "1A1NXAYq6idoxUhNP3UVmPHcw1mvx8w_a",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Indigo-Construction",
+      "folder": "Indigo-Construction",
+      "folderId": "15DvQhYzf8EC3Kb5QARgZxGePj0mg1GIf",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Maces",
+      "folder": "Maces",
+      "folderId": "1zYPZlciP84KyX_Mg_7DEqz0AXKaLZGfN",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "mericles",
+      "folder": "mericles",
+      "folderId": "1BKE2GhlCdrd4uIvEbaqLypOovL9Pp_Pp",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Mission-Wrecker",
+      "folder": "Mission-Wrecker",
+      "folderId": "1xOBN8S6NWIr5zu36YrR8Nlx2GGTL7TOo",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Mott-s-Wrecker-Service",
+      "folder": "Mott-s-Wrecker-Service",
+      "folderId": "1PxpHWf291GxcSY5iCgm5o-LapbR8v76q",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "neal-pool",
+      "folder": "neal-pool",
+      "folderId": "1CfjscMuhAn1MYxwtYIZxceZYNd7BgSce",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Panchos",
+      "folder": "Panchos",
+      "folderId": "16GRhXs_3KDdaSnhWa0qYaT2YJAQ0r5hf",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "panhandle-express",
+      "folder": "panhandle-express",
+      "folderId": "1D3PNV9rReLCcvoG1j6Nn6sYRTmWiW_FO",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "PCS-Trucking",
+      "folder": "PCS-Trucking",
+      "folderId": "13Sd-gaqOUIbE2ye5NZYrU80VmEtJRcdB",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Pep-Move",
+      "folder": "Pep-Move",
+      "folderId": "1F-xdtMfa5Kw7XM8k6_LLSM9v7PiUvLmw",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Priority-Towing",
+      "folder": "Priority-Towing",
+      "folderId": "1oq1Iqd6Edmno-Q5QZ-quvrxcoyLmd1Ob",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Pyramid-Logistics",
+      "folder": "Pyramid-Logistics",
+      "folderId": "1wK45b3DXmgNt9BLHdogTIyNPk8ENaf6w",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Reed-Beverage",
+      "folder": "Reed-Beverage",
+      "folderId": "10xbRTO-32QNK8SOJsbS77QfwZ1DnTlpE",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Salt-Creek-Logistics",
+      "folder": "Salt-Creek-Logistics",
+      "folderId": "1kc2g9vnbWvipCWNTGDiwpa-QZD13dnCc",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "STAC-Services",
+      "folder": "STAC-Services",
+      "folderId": "1ESiAHInwYkzE1Ql08heSG2kzXW5LTCai",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Starkey-Trash-Service",
+      "folder": "Starkey-Trash-Service",
+      "folderId": "1upQsf8-1_pqUDnCS3dZWpTTGk0LNUDa4",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "t-miller",
+      "folder": "t-miller",
+      "folderId": "1rZkPPuxo7p2V8koQlig3o58aCmzRXFqJ",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "Texas-Towing",
+      "folder": "Texas-Towing",
+      "folderId": "198sAWMZQamQuG2gar5-ryY0729HW-oOE",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "The-Electric-Light-and-Power-Company",
+      "folder": "The-Electric-Light-and-Power-Company",
+      "folderId": "1ltkPqjhm1FX2MITOIGWoYXPE_M7urVKQ",
+      "onSheet": true,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "tnt-wrecker",
+      "folder": "tnt-wrecker",
+      "folderId": "1h5fGM_iJV7pqfKc7srlOinv9QqIJsU1k",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    },
+    {
+      "name": "voyager",
+      "folder": "voyager",
+      "folderId": "13s95cotTCli8w-M3mO0jHlPiceFT4o00",
+      "onSheet": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "Jan 2026",
+      "overrides": {}
+    }
+  ],
+  "generated": "2026-06-19",
+  "source": {
+    "sheetId": "1jDD_g9tzGNeg-vs6hnTpmcQ5I1zqb6yRT7Kuu823D-0",
+    "foldersParent": "1Wjxd5hoozZzW4JcDQBBlFY60F8I1TiM5"
+  }
+}
