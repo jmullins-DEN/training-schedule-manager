@@ -273,6 +273,17 @@
       "hasDashboard": true
     },
     {
+      "name": "Canyon State",
+      "folder": "Canyon State",
+      "folderId": "",
+      "onSheet": true,
+      "hasDashboard": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "",
+      "overrides": {}
+    },
+    {
       "name": "Carolina-Floor-Systems",
       "folder": "Carolina-Floor-Systems",
       "folderId": "1rB-a7EgGeNeNTB9_Sa1Ad939Erfo4kCO",
@@ -394,6 +405,17 @@
       "hasDashboard": true
     },
     {
+      "name": "HATT LLC",
+      "folder": "HATT LLC",
+      "folderId": "",
+      "onSheet": true,
+      "hasDashboard": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "",
+      "overrides": {}
+    },
+    {
       "name": "Home-Motors",
       "folder": "Home-Motors ",
       "folderId": "1A1NXAYq6idoxUhNP3UVmPHcw1mvx8w_a",
@@ -414,6 +436,50 @@
       "startMonth": "Jan 2026",
       "overrides": {},
       "hasDashboard": true
+    },
+    {
+      "name": "Jackson County Towing",
+      "folder": "Jackson County Towing",
+      "folderId": "",
+      "onSheet": true,
+      "hasDashboard": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "",
+      "overrides": {}
+    },
+    {
+      "name": "JOG Services",
+      "folder": "JOG Services",
+      "folderId": "",
+      "onSheet": true,
+      "hasDashboard": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "",
+      "overrides": {}
+    },
+    {
+      "name": "Just Junk",
+      "folder": "Just Junk",
+      "folderId": "",
+      "onSheet": true,
+      "hasDashboard": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "",
+      "overrides": {}
+    },
+    {
+      "name": "Lund Transportation",
+      "folder": "Lund Transportation",
+      "folderId": "",
+      "onSheet": true,
+      "hasDashboard": false,
+      "track": "Standard Track",
+      "contact": "Cindy Simpson",
+      "startMonth": "",
+      "overrides": {}
     },
     {
       "name": "Maces",
