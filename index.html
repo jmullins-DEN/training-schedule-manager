@@ -1054,12 +1054,29 @@ function renderSchedules(){
       <td><input value="${esc(t.month)}" style="width:120px" onchange="curEdit(${i},'month',this.value)"></td>
       <td><input value="${esc(t.topic)}" style="width:100%" onchange="curEdit(${i},'topic',this.value)"></td>
       <td><select onchange="curEdit(${i},'status',this.value)">${STATUSES.map(s=>`<option ${s===t.status?'selected':''}>${s}</option>`).join("")}</select></td>
-      <td class="row-actions"><button class="danger" onclick="delTopic(${i})">✕</button></td>
+      <td class="row-actions"><button onclick="bulkSetTopic(${i})" title="Set this month's topic for every customer on this track">Set for all</button> <button class="danger" onclick="delTopic(${i})">✕</button></td>
     </tr>`).join("") || `<tr><td colspan="5" class="muted" style="text-align:center;padding:20px">No months yet — click “+ Add month”.</td></tr>`;
 }
 function curEdit(i,k,v){ schedById(curSchedId).rows[i][k]=v; save(); if(k==='status'){ renderStats(); renderClients(); } }
 function addTopic(){ schedById(curSchedId).rows.push({month:"New Month",topic:"New Topic",status:"Upcoming"}); save(); renderSchedules(); renderStats(); }
 function delTopic(i){ if(confirm("Delete this month from the learning track?")){ schedById(curSchedId).rows.splice(i,1); save(); renderSchedules(); renderStats(); renderClients(); } }
+function bulkSetTopic(i){
+  const sched=schedById(curSchedId), row=sched.rows[i]; if(!row) return;
+  const assigned=data.clients.filter(c=>c.scheduleId===curSchedId);
+  const customized=assigned.filter(c=>c.topicOverrides && c.topicOverrides[i]!=null).length;
+  const nv=prompt(`Set the topic for “${row.month}” for ALL ${assigned.length} customer(s) on “${sched.name}”.`+(customized?`\n\nThis overrides ${customized} per-customer customization(s) for this month.`:""), row.topic);
+  if(nv==null) return;
+  const t=nv.trim(); if(!t) return;
+  row.topic=t;
+  assigned.forEach(c=>{
+    if(c.topicOverrides && c.topicOverrides[i]!=null){
+      delete c.topicOverrides[i];
+      if(c.overrides && c.overrides[i]==="Customer") delete c.overrides[i];  // reset the customer-specific flag too
+    }
+  });
+  save(); renderSchedules(); renderClients(); renderStats(); renderByCustomer(); if(curView==='bymonth') renderByMonth();
+  alert(`“${row.month}” set to “${t}” for ${assigned.length} customer(s)`+(customized?` (cleared ${customized} customization${customized===1?'':'s'})`:"")+".");
+}
 function newSchedule(){
   const name=prompt("New learning track name? (starts empty)"); if(!name)return;
   const id=uniqId(slug(name));
