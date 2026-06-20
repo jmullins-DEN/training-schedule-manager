@@ -106,7 +106,7 @@
       <button id="tab-clients" class="nav active" onclick="showTab('clients')">👥 <span>Clients</span></button>
       <button id="tab-bycustomer" class="nav" onclick="showTab('bycustomer')">👤 <span>By Customer</span></button>
       <button id="tab-bymonth" class="nav" onclick="showTab('bymonth')">🗓️ <span>By Month</span></button>
-      <button id="tab-schedules" class="nav" onclick="showTab('schedules')">📘 <span>Schedules</span></button>
+      <button id="tab-schedules" class="nav" onclick="showTab('schedules')">📘 <span>Learning Tracks</span></button>
     </nav>
     <div class="side-foot">
       <button onclick="exportJSON()">⬇ Export JSON</button>
@@ -144,21 +144,20 @@
       </select>
     </div>
     <table>
-      <thead><tr><th>Client</th><th>Folder</th><th>Schedule</th><th>Contact</th><th>Dashboard</th><th>Progress</th><th></th></tr></thead>
+      <thead><tr><th>Client</th><th>Folder</th><th>Learning Track</th><th>Contact</th><th>Dashboard</th><th>Progress</th><th></th></tr></thead>
       <tbody id="clients-body"></tbody>
     </table>
   </div>
 
   <!-- BY CUSTOMER -->
   <div id="view-bycustomer" style="display:none">
-    <div class="note">Select a customer to view and edit <b>their individual training schedule</b> — which track they're on, what they've completed, and what's scheduled out. A per-month status set here overrides the schedule default for this customer only.</div>
+    <div class="note">Select a customer to view and edit <b>their individual learning track</b> — which track they're on, what they've completed, and what's scheduled out. A per-month status set here overrides the learning-track default for this customer only.</div>
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <label class="muted" style="font-size:12px">Customer</label>
       <select id="bc-pick" onchange="bcIdx=+this.value;renderByCustomer()" style="min-width:200px"></select>
-      <label class="muted" style="font-size:12px">Schedule</label>
+      <label class="muted" style="font-size:12px">Learning Track</label>
       <select id="bc-sched" onchange="bcSetSchedule(this.value)" style="min-width:160px"></select>
       <button onclick="if(bcIdx!=null)openClient(bcIdx)">Edit details</button>
-      <button class="cta" onclick="bcAddClient()">+ Add customer</button>
       <span id="bc-summary" class="muted" style="font-size:12.5px"></span>
     </div>
     <table>
@@ -169,7 +168,7 @@
 
   <!-- BY MONTH -->
   <div id="view-bymonth" style="display:none">
-    <div class="note">Pick a month to see <b>every client and the training they're scheduled for that month</b>, based on each client's assigned schedule. Status reflects any per-client overrides.</div>
+    <div class="note">Pick a month to see <b>every client and the training they're scheduled for that month</b>, based on each client's assigned learning track. Status reflects any per-client overrides.</div>
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <label class="muted" style="font-size:12px">Month</label>
       <select id="bm-month" onchange="bmMonth=this.value;renderByMonth()" style="min-width:140px"></select>
@@ -183,16 +182,16 @@
       <span id="bm-summary" class="muted" style="font-size:12.5px"></span>
     </div>
     <table>
-      <thead><tr><th>Client</th><th>Schedule</th><th>Training Topic</th><th>Status</th></tr></thead>
+      <thead><tr><th>Client</th><th>Learning Track</th><th>Training Topic</th><th>Status</th></tr></thead>
       <tbody id="bm-body"></tbody>
     </table>
   </div>
 
   <!-- SCHEDULES -->
   <div id="view-schedules" style="display:none">
-    <div class="note">Build and manage <b>training schedules</b> (tracks). Each schedule is its own list of month → topic → status. Assign a schedule to a client from that client's Schedule view. Editing a row here is the default for everyone on the schedule; a client can override individual months.</div>
+    <div class="note">Build and manage <b>learning tracks</b>. Each learning track is its own list of month → topic → status. Assign a learning track to a client from that client's Learning Track view. Editing a row here is the default for everyone on the track; a client can override individual months.</div>
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
-      <label class="muted" style="font-size:12px">Schedule</label>
+      <label class="muted" style="font-size:12px">Learning Track</label>
       <select id="sched-pick" onchange="curSchedId=this.value;renderSchedules()" style="min-width:170px"></select>
       <button onclick="newSchedule()">+ New</button>
       <button onclick="dupSchedule()">⧉ Duplicate</button>
@@ -1014,7 +1013,7 @@ function renderStats(){
   document.getElementById('stats').innerHTML=`
     <div class="stat"><div class="n">${data.clients.length}</div><div class="l">Clients total</div></div>
     <div class="stat"><div class="n">${noDash}</div><div class="l">No dashboard</div></div>
-    <div class="stat"><div class="n">${data.schedules.length}</div><div class="l">Schedules</div></div>
+    <div class="stat"><div class="n">${data.schedules.length}</div><div class="l">Learning Tracks</div></div>
     <div class="stat"><div class="n">${avg}%</div><div class="l">Avg progress</div></div>`;
 }
 function sourceBadge(c){
@@ -1037,7 +1036,7 @@ function renderClients(){
       <td>${esc(c.contact)}</td>
       <td>${sourceBadge(c)}</td>
       <td><span class="prog"><i style="width:${p}%"></i></span> <span class="muted">${p}%</span></td>
-      <td class="row-actions"><button onclick="openClient(${idx})">Schedule</button> <button class="danger" onclick="delClient(${idx})">✕</button></td>
+      <td class="row-actions"><button onclick="openClient(${idx})">Learning Track</button> <button class="danger" onclick="delClient(${idx})">✕</button></td>
     </tr>`;
   }).join("") || `<tr><td colspan="7" class="muted" style="text-align:center;padding:24px">No clients match.</td></tr>`;
 }
@@ -1060,9 +1059,9 @@ function renderSchedules(){
 }
 function curEdit(i,k,v){ schedById(curSchedId).rows[i][k]=v; save(); if(k==='status'){ renderStats(); renderClients(); } }
 function addTopic(){ schedById(curSchedId).rows.push({month:"New Month",topic:"New Topic",status:"Upcoming"}); save(); renderSchedules(); renderStats(); }
-function delTopic(i){ if(confirm("Delete this month from the schedule?")){ schedById(curSchedId).rows.splice(i,1); save(); renderSchedules(); renderStats(); renderClients(); } }
+function delTopic(i){ if(confirm("Delete this month from the learning track?")){ schedById(curSchedId).rows.splice(i,1); save(); renderSchedules(); renderStats(); renderClients(); } }
 function newSchedule(){
-  const name=prompt("New schedule name? (starts empty)"); if(!name)return;
+  const name=prompt("New learning track name? (starts empty)"); if(!name)return;
   const id=uniqId(slug(name));
   data.schedules.push({id,name:name.trim(),rows:[]});
   curSchedId=id; save(); renderSchedules(); renderStats();
@@ -1075,17 +1074,17 @@ function dupSchedule(){
   curSchedId=id; save(); renderSchedules(); renderStats();
 }
 function renameSchedule(){
-  const s=schedById(curSchedId); const name=prompt("Rename schedule:",s.name); if(!name)return;
+  const s=schedById(curSchedId); const name=prompt("Rename learning track:",s.name); if(!name)return;
   s.name=name.trim();
   data.clients.forEach(c=>{ if(c.scheduleId===s.id) c.track=s.name; });
   save(); renderSchedules(); renderClients();
 }
 function delSchedule(){
-  if(data.schedules.length<=1){ alert("You need at least one schedule."); return; }
+  if(data.schedules.length<=1){ alert("You need at least one learning track."); return; }
   const s=schedById(curSchedId);
   const assigned=data.clients.filter(c=>c.scheduleId===curSchedId);
   const fallback=data.schedules.find(x=>x.id!==curSchedId);
-  if(!confirm(`Delete schedule “${s.name}”?`+(assigned.length?`\n\n${assigned.length} client(s) will be reassigned to “${fallback.name}” and their per-month overrides cleared.`:""))) return;
+  if(!confirm(`Delete learning track “${s.name}”?`+(assigned.length?`\n\n${assigned.length} client(s) will be reassigned to “${fallback.name}” and their per-month overrides cleared.`:""))) return;
   assigned.forEach(c=>{ c.scheduleId=fallback.id; c.track=fallback.name; c.overrides={}; c.topicOverrides={}; });
   data.schedules=data.schedules.filter(x=>x.id!==curSchedId);
   curSchedId=fallback.id; save(); renderAll();
@@ -1162,11 +1161,11 @@ function renderByCustomer(){
         <option value="">default (${esc(t.status)})</option>
         ${STATUSES.map(s=>`<option ${ov&&c.overrides[i]===s?'selected':''} value="${s}">${s}</option>`).join("")}
       </select></td></tr>`;
-  }).join("") || `<tr><td colspan="3" class="muted" style="text-align:center;padding:24px">This schedule has no months yet.</td></tr>`;
+  }).join("") || `<tr><td colspan="3" class="muted" style="text-align:center;padding:24px">This learning track has no months yet.</td></tr>`;
 }
 function bcSetSchedule(id){
   const c=data.clients[bcIdx]; if(!c||id===c.scheduleId) return;
-  if(!confirm("Change this customer's schedule? Their per-month status and topic overrides will be cleared.")){ renderByCustomer(); return; }
+  if(!confirm("Change this customer's learning track? Their per-month status and topic overrides will be cleared.")){ renderByCustomer(); return; }
   c.scheduleId=id; c.overrides={}; c.topicOverrides={}; c.track=schedFor(c).name;
   save(); renderByCustomer(); renderClients(); renderStats(); if(curView==='bymonth') renderByMonth();
 }
@@ -1184,20 +1183,11 @@ function bcSetTopic(i,v){
   c.overrides[i]="Customer";
   save(); renderByCustomer(); renderClients(); renderStats(); if(curView==='bymonth') renderByMonth();
 }
-function bcAddClient(){
-  const name=prompt("New customer display name? (training tracking only — no Drive dashboard)"); if(!name)return;
-  // land the new customer on the schedule currently shown in the picker, falling back to the first schedule
-  const cur=data.clients[bcIdx], schedId=(cur&&cur.scheduleId)||data.schedules[0].id;
-  const sched=data.schedules.find(s=>s.id===schedId)||data.schedules[0];
-  data.clients.push({folder:"",folderId:"",name,track:sched.name,scheduleId:sched.id,contact:"Cindy Simpson",onSheet:false,hasDashboard:false,startMonth:"",overrides:{}});
-  bcIdx=data.clients.length-1;
-  save(); renderByCustomer(); renderClients(); renderStats(); if(curView==='bymonth') renderByMonth();
-}
 
 // ---- client detail (timeline) ----
 function openClient(idx){
   editIdx=idx; const c=data.clients[idx]; const sched=schedFor(c); const nk=NOW_KEY();
-  document.getElementById('dlg-h').textContent=c.name+" — Schedule";
+  document.getElementById('dlg-h').textContent=c.name+" — Learning Track";
   const ordered=sched.rows.map((t,i)=>({t,i,k:monthKey(t.month)}))
     .sort((a,b)=> ((a.k==null)-(b.k==null)) || ((a.k||0)-(b.k||0)) || (a.i-b.i));
   const timeline=ordered.map(({t,i,k})=>{
@@ -1209,19 +1199,19 @@ function openClient(idx){
         <option value="">default (${esc(t.status)})</option>
         ${STATUSES.map(s=>`<option ${ (c.overrides&&c.overrides[i]===s)?'selected':'' } value="${s}">${s}</option>`).join("")}
       </select></td></tr>`;
-  }).join("") || `<tr><td colspan="3" class="muted" style="text-align:center;padding:16px">This schedule has no months yet.</td></tr>`;
+  }).join("") || `<tr><td colspan="3" class="muted" style="text-align:center;padding:16px">This learning track has no months yet.</td></tr>`;
   const sentCount=sched.rows.filter((t,i)=>effStatus(c,i).startsWith("✓")).length;
   const upCount=sched.rows.filter((t,i)=>{const s=effStatus(c,i);return !s.startsWith("✓")&&s!=="N/A";}).length;
   document.getElementById('dlg-b').innerHTML=`
     <div class="fld"><label>Display name</label><input id="d-name" value="${esc(c.name)}"></div>
-    <div class="fld"><label>Assigned schedule</label>
+    <div class="fld"><label>Assigned learning track</label>
       <select id="d-sched">${data.schedules.map(s=>`<option value="${esc(s.id)}" ${s.id===c.scheduleId?'selected':''}>${esc(s.name)}</option>`).join("")}</select>
-      <div class="muted" style="font-size:11.5px;margin-top:4px">Changing the schedule clears this client's per-month overrides.</div>
+      <div class="muted" style="font-size:11.5px;margin-top:4px">Changing the learning track clears this client's per-month overrides.</div>
     </div>
     <div class="fld"><label>Training contact</label><input id="d-contact" value="${esc(c.contact)}"></div>
     <div class="fld"><label>Start month</label><input id="d-start" value="${esc(c.startMonth||'')}"></div>
     <div class="note" style="margin:0 0 14px">Completed: <b>${sentCount}</b> &bull; scheduled out: <b>${upCount}</b> &bull; current month is <b>${esc(monthLabelNow())}</b>.</div>
-    <div class="fld"><label>Training history &amp; schedule — sorted by month; set a status to override the schedule default</label>
+    <div class="fld"><label>Training history &amp; learning track — sorted by month; set a status to override the learning-track default</label>
       <table><thead><tr><th>Month</th><th>Topic</th><th>Status</th></tr></thead><tbody>${timeline}</tbody></table>
     </div>`;
   document.getElementById('dlg').showModal();
@@ -1246,7 +1236,7 @@ function addClient(){
   data.clients.push({folder:"",folderId:"",name,track:data.schedules[0].name,scheduleId:data.schedules[0].id,contact:"Cindy Simpson",onSheet:false,hasDashboard:false,startMonth:"",overrides:{}});
   save(); renderClients(); renderStats();
 }
-function delClient(i){ if(confirm("Remove "+data.clients[i].name+" from the schedule app? (does not touch Drive)")){ data.clients.splice(i,1); save(); renderClients(); renderStats(); } }
+function delClient(i){ if(confirm("Remove "+data.clients[i].name+" from the training app? (does not touch Drive)")){ data.clients.splice(i,1); save(); renderClients(); renderStats(); } }
 
 function showTab(t){
   curView=t;
