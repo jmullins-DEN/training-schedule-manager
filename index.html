@@ -931,7 +931,7 @@ const SEED = {
   }
 };
 const KEY = "den-training-schedule-v1";
-const STATUSES = ["✓ Sent","Upcoming","↻ Repeat","N/A"];
+const STATUSES = ["✓ Sent","Upcoming","↻ Repeat","Customer","N/A"];
 const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
 let data, editIdx=-1, curSchedId=null, bmMonth=null, bcIdx=null, curView='clients';
 
@@ -956,6 +956,15 @@ function effStatus(c,i){
   if(c.overrides && c.overrides[i]!=null) return c.overrides[i];
   const r=rowsFor(c); return r[i]?r[i].status:"N/A";
 }
+function effTopic(c,i){
+  if(c.topicOverrides && c.topicOverrides[i]!=null) return c.topicOverrides[i];
+  const r=rowsFor(c); return r[i]?r[i].topic:"";
+}
+function allTopics(){
+  const set=new Set();
+  data.schedules.forEach(s=>s.rows.forEach(r=>{ if(r.topic) set.add(r.topic); }));
+  return [...set].sort((a,b)=>a.localeCompare(b));
+}
 function clientProgress(c){
   let sent=0,tot=0;
   rowsFor(c).forEach((t,i)=>{ const s=effStatus(c,i); if(s!=="N/A"){tot++; if(s.startsWith("✓"))sent++;} });
@@ -972,6 +981,7 @@ function migrate(d){
   (d.clients||[]).forEach(c=>{
     if(c.hasDashboard===undefined) c.hasDashboard = !!c.folderId;
     if(!c.overrides) c.overrides={};
+    if(!c.topicOverrides) c.topicOverrides={};
     if(!c.scheduleId){ const m=d.schedules.find(s=>s.name===c.track); c.scheduleId = m?m.id:d.schedules[0].id; }
   });
   return d;
@@ -994,6 +1004,7 @@ function save(){
 function badgeFor(st){
   if(st.startsWith("✓")) return '<span class="badge b-sent">'+st+'</span>';
   if(st.startsWith("↻")) return '<span class="badge b-rep">'+st+'</span>';
+  if(st==="Customer") return '<span class="badge b-sheet">Customer</span>';
   if(st==="N/A") return '<span class="badge b-folder">N/A</span>';
   return '<span class="badge b-up">'+st+'</span>';
 }
@@ -1075,7 +1086,7 @@ function delSchedule(){
   const assigned=data.clients.filter(c=>c.scheduleId===curSchedId);
   const fallback=data.schedules.find(x=>x.id!==curSchedId);
   if(!confirm(`Delete schedule “${s.name}”?`+(assigned.length?`\n\n${assigned.length} client(s) will be reassigned to “${fallback.name}” and their per-month overrides cleared.`:""))) return;
-  assigned.forEach(c=>{ c.scheduleId=fallback.id; c.track=fallback.name; c.overrides={}; });
+  assigned.forEach(c=>{ c.scheduleId=fallback.id; c.track=fallback.name; c.overrides={}; c.topicOverrides={}; });
   data.schedules=data.schedules.filter(x=>x.id!==curSchedId);
   curSchedId=fallback.id; save(); renderAll();
 }
@@ -1099,7 +1110,7 @@ function renderByMonth(){
     const sched=schedFor(c); let idx=-1;
     sched.rows.forEach((r,i)=>{ if(monthKey(r.month)===mk) idx=i; });
     if(idx<0) return null;
-    return {c, topic:sched.rows[idx].topic, status:effStatus(c,idx), sched:sched.name};
+    return {c, topic:effTopic(c,idx), status:effStatus(c,idx), sched:sched.name};
   }).filter(Boolean);
   const ct={sent:0,up:0,rep:0,na:0};
   rows.forEach(r=>{ if(r.status.startsWith("✓"))ct.sent++; else if(r.status.startsWith("↻"))ct.rep++; else if(r.status==="N/A")ct.na++; else ct.up++; });
@@ -1129,12 +1140,24 @@ function renderByCustomer(){
   sum.textContent = `completed ${sentCount} • scheduled out ${upCount} • current month is ${monthLabelNow()}`;
   const ordered=sched.rows.map((t,i)=>({t,i,k:monthKey(t.month)}))
     .sort((a,b)=> ((a.k==null)-(b.k==null)) || ((a.k||0)-(b.k||0)) || (a.i-b.i));
+  const topics=allTopics();
   body.innerHTML = ordered.map(({t,i,k})=>{
     const isNow = k!=null && k===nk;
     const ov = c.overrides && c.overrides[i]!=null;
+    const future = k!=null && k>=nk;            // current + upcoming months are editable
+    const curTopic = effTopic(c,i), tov = c.topicOverrides && c.topicOverrides[i]!=null;
+    let topicCell;
+    if(future){
+      const opts=[...new Set([...topics, curTopic])].filter(Boolean).sort((a,b)=>a.localeCompare(b));
+      topicCell=`<select onchange="bcSetTopic(${i},this.value)" title="Change this customer's training for this month">
+        ${opts.map(tp=>`<option ${tp===curTopic?'selected':''} value="${esc(tp)}">${esc(tp)}</option>`).join("")}
+      </select>${tov?' <span class="pill" style="background:rgba(14,126,166,.14);color:var(--accent)">customized</span>':''}`;
+    } else {
+      topicCell=`${esc(curTopic)}${tov?' <span class="pill" style="background:rgba(14,126,166,.14);color:var(--accent)">customized</span>':''}`;
+    }
     return `<tr class="${isNow?'tl-now':''}">
       <td style="white-space:nowrap">${esc(t.month)}${isNow?' <span class="pill" style="background:rgba(14,126,166,.14);color:var(--accent)">this month</span>':''}</td>
-      <td>${esc(t.topic)}</td>
+      <td>${topicCell}</td>
       <td><select onchange="bcSetOverride(${i},this.value)">
         <option value="">default (${esc(t.status)})</option>
         ${STATUSES.map(s=>`<option ${ov&&c.overrides[i]===s?'selected':''} value="${s}">${s}</option>`).join("")}
@@ -1143,14 +1166,23 @@ function renderByCustomer(){
 }
 function bcSetSchedule(id){
   const c=data.clients[bcIdx]; if(!c||id===c.scheduleId) return;
-  if(!confirm("Change this customer's schedule? Their per-month status overrides will be cleared.")){ renderByCustomer(); return; }
-  c.scheduleId=id; c.overrides={}; c.track=schedFor(c).name;
+  if(!confirm("Change this customer's schedule? Their per-month status and topic overrides will be cleared.")){ renderByCustomer(); return; }
+  c.scheduleId=id; c.overrides={}; c.topicOverrides={}; c.track=schedFor(c).name;
   save(); renderByCustomer(); renderClients(); renderStats(); if(curView==='bymonth') renderByMonth();
 }
 function bcSetOverride(i,v){
   const c=data.clients[bcIdx]; if(!c) return;
   if(v) c.overrides[i]=v; else delete c.overrides[i];
   save(); renderByCustomer(); renderClients(); renderStats();
+}
+function bcSetTopic(i,v){
+  const c=data.clients[bcIdx]; if(!c) return;
+  if(!c.topicOverrides) c.topicOverrides={};
+  const def=rowsFor(c)[i]?rowsFor(c)[i].topic:"";
+  if(v && v!==def) c.topicOverrides[i]=v; else delete c.topicOverrides[i];
+  // changing a customer's training for a month flags that month as a customer-specific entry
+  c.overrides[i]="Customer";
+  save(); renderByCustomer(); renderClients(); renderStats(); if(curView==='bymonth') renderByMonth();
 }
 function bcAddClient(){
   const name=prompt("New customer display name? (training tracking only — no Drive dashboard)"); if(!name)return;
@@ -1172,7 +1204,7 @@ function openClient(idx){
     const isNow = k!=null && k===nk;
     return `<tr class="${isNow?'tl-now':''}">
       <td style="white-space:nowrap">${esc(t.month)}${isNow?' <span class="pill" style="background:rgba(14,126,166,.14);color:var(--accent)">this month</span>':''}</td>
-      <td>${esc(t.topic)}</td>
+      <td>${esc(effTopic(c,i))}${(c.topicOverrides&&c.topicOverrides[i]!=null)?' <span class="pill" style="background:rgba(14,126,166,.14);color:var(--accent)">customized</span>':''}</td>
       <td><select data-i="${i}" class="ovr">
         <option value="">default (${esc(t.status)})</option>
         ${STATUSES.map(s=>`<option ${ (c.overrides&&c.overrides[i]===s)?'selected':'' } value="${s}">${s}</option>`).join("")}
@@ -1199,7 +1231,7 @@ function saveDlg(){
   c.name=val('d-name'); c.contact=val('d-contact'); c.startMonth=val('d-start');
   const newSched=val('d-sched');
   if(newSched!==c.scheduleId){
-    c.scheduleId=newSched; c.overrides={};   // overrides are row-index based; can't survive a schedule swap
+    c.scheduleId=newSched; c.overrides={}; c.topicOverrides={};   // overrides are row-index based; can't survive a schedule swap
   } else {
     c.overrides={};
     document.querySelectorAll('#dlg-b .ovr').forEach(sel=>{ if(sel.value) c.overrides[sel.dataset.i]=sel.value; });
