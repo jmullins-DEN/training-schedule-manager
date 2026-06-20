@@ -68,6 +68,7 @@
   th{background:#f7f9fc;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
   tr:last-child td{border-bottom:none}
   tbody tr:hover td{background:#f5f8fe}
+  tr.tl-now td{background:rgba(47,111,237,.06)}
   input,select{background:#fff;color:var(--text);border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit}
   input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,111,237,.12)}
   .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
@@ -104,7 +105,8 @@
     <nav>
       <div class="nav-h">Manage</div>
       <button id="tab-clients" class="nav active" onclick="showTab('clients')">👥 <span>Clients</span></button>
-      <button id="tab-curriculum" class="nav" onclick="showTab('curriculum')">📘 <span>Curriculum</span></button>
+      <button id="tab-bymonth" class="nav" onclick="showTab('bymonth')">🗓️ <span>By Month</span></button>
+      <button id="tab-schedules" class="nav" onclick="showTab('schedules')">📘 <span>Schedules</span></button>
     </nav>
     <div class="side-foot">
       <button onclick="exportJSON()">⬇ Export JSON</button>
@@ -150,9 +152,39 @@
     </table>
   </div>
 
-  <!-- CURRICULUM -->
-  <div id="view-curriculum" style="display:none">
-    <div class="note">The shared <b>Standard Track</b> curriculum. Editing a topic's status here is the default for every client; individual clients can override their own status from the client detail view.</div>
+  <!-- BY MONTH -->
+  <div id="view-bymonth" style="display:none">
+    <div class="note">Pick a month to see <b>every client and the training they're scheduled for that month</b>, based on each client's assigned schedule. Status reflects any per-client overrides.</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <label class="muted" style="font-size:12px">Month</label>
+      <select id="bm-month" onchange="bmMonth=this.value;renderByMonth()" style="min-width:140px"></select>
+      <select id="bm-filt" onchange="renderByMonth()">
+        <option value="all">All statuses</option>
+        <option value="sent">✓ Sent</option>
+        <option value="up">Upcoming</option>
+        <option value="rep">↻ Repeat</option>
+        <option value="na">N/A</option>
+      </select>
+      <span id="bm-summary" class="muted" style="font-size:12.5px"></span>
+    </div>
+    <table>
+      <thead><tr><th>Client</th><th>Schedule</th><th>Training Topic</th><th>Status</th></tr></thead>
+      <tbody id="bm-body"></tbody>
+    </table>
+  </div>
+
+  <!-- SCHEDULES -->
+  <div id="view-schedules" style="display:none">
+    <div class="note">Build and manage <b>training schedules</b> (tracks). Each schedule is its own list of month → topic → status. Assign a schedule to a client from that client's Schedule view. Editing a row here is the default for everyone on the schedule; a client can override individual months.</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <label class="muted" style="font-size:12px">Schedule</label>
+      <select id="sched-pick" onchange="curSchedId=this.value;renderSchedules()" style="min-width:170px"></select>
+      <button onclick="newSchedule()">+ New</button>
+      <button onclick="dupSchedule()">⧉ Duplicate</button>
+      <button onclick="renameSchedule()">Rename</button>
+      <button class="danger" onclick="delSchedule()">Delete</button>
+      <span id="sched-assigned" class="muted" style="font-size:12.5px"></span>
+    </div>
     <button class="primary" style="margin-bottom:12px" onclick="addTopic()">+ Add month</button>
     <table>
       <thead><tr><th style="width:50px">#</th><th>Month</th><th>Training Topic</th><th>Status</th><th></th></tr></thead>
@@ -592,7 +624,7 @@ const SEED = {
     },
     {
       "name": "Home-Motors",
-      "folder": "Home-Motors ",
+      "folder": "Home-Motors",
       "folderId": "1A1NXAYq6idoxUhNP3UVmPHcw1mvx8w_a",
       "onSheet": false,
       "track": "Standard Track",
@@ -885,17 +917,59 @@ const SEED = {
 };
 const KEY = "den-training-schedule-v1";
 const STATUSES = ["✓ Sent","Upcoming","↻ Repeat","N/A"];
-let data, editIdx=-1;
+const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+let data, editIdx=-1, curSchedId=null, bmMonth=null, curView='clients';
 
+// ---- month helpers ----
+function monthKey(m){
+  if(!m) return null;
+  const x=String(m).trim().toLowerCase().match(/([a-z]+)\s+(\d{4})/);
+  if(!x) return null;
+  const mm=MON[x[1].slice(0,3)]; if(mm==null) return null;
+  return parseInt(x[2],10)*12+mm;
+}
+function NOW_KEY(){ const d=new Date(); return d.getFullYear()*12+d.getMonth(); }
+function monthLabelNow(){ const d=new Date(); return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+" "+d.getFullYear(); }
+
+// ---- schedule helpers ----
+function slug(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')||'sched'; }
+function uniqId(base){ let id=base,n=2; while(data.schedules.some(s=>s.id===id)){ id=base+'-'+(n++); } return id; }
+function schedById(id){ return data.schedules.find(s=>s.id===id); }
+function schedFor(c){ return schedById(c.scheduleId) || data.schedules[0]; }
+function rowsFor(c){ return schedFor(c).rows; }
+function effStatus(c,i){
+  if(c.overrides && c.overrides[i]!=null) return c.overrides[i];
+  const r=rowsFor(c); return r[i]?r[i].status:"N/A";
+}
+function clientProgress(c){
+  let sent=0,tot=0;
+  rowsFor(c).forEach((t,i)=>{ const s=effStatus(c,i); if(s!=="N/A"){tot++; if(s.startsWith("✓"))sent++;} });
+  return tot?Math.round(100*sent/tot):0;
+}
+
+// ---- data load / migrate ----
+function migrate(d){
+  if(!d.schedules){
+    if(d.curriculum){ d.schedules=[{id:"standard",name:"Standard Track",rows:d.curriculum}]; delete d.curriculum; }
+    else d.schedules=[{id:"standard",name:"Standard Track",rows:[]}];
+  }
+  if(!d.schedules.length){ d.schedules=[{id:"standard",name:"Standard Track",rows:[]}]; }
+  (d.clients||[]).forEach(c=>{
+    if(c.hasDashboard===undefined) c.hasDashboard = !!c.folderId;
+    if(!c.overrides) c.overrides={};
+    if(!c.scheduleId){ const m=d.schedules.find(s=>s.name===c.track); c.scheduleId = m?m.id:d.schedules[0].id; }
+  });
+  return d;
+}
 function load(){
   try{ const s=localStorage.getItem(KEY); data = s?JSON.parse(s):structuredClone(SEED); }
   catch(e){ data=structuredClone(SEED); }
-  if(!data.curriculum||!data.clients){ data=structuredClone(SEED); }
-  // migrate older data: a client has a dashboard if it has a Drive folder id
-  data.clients.forEach(c=>{ if(c.hasDashboard===undefined) c.hasDashboard = !!c.folderId; });
+  if(!data.clients){ data=structuredClone(SEED); }
+  migrate(data);
   // merge in any new seed clients added during onboarding, without clobbering local edits
   const have=new Set(data.clients.map(c=>(c.folder||c.name).toLowerCase()));
-  SEED.clients.forEach(sc=>{ const k=(sc.folder||sc.name).toLowerCase(); if(!have.has(k)){ data.clients.push(structuredClone(sc)); } });
+  SEED.clients.forEach(sc=>{ const k=(sc.folder||sc.name).toLowerCase(); if(!have.has(k)){ const nc=structuredClone(sc); if(!nc.scheduleId) nc.scheduleId=data.schedules[0].id; data.clients.push(nc); } });
+  curSchedId=data.schedules[0].id;
 }
 function save(){
   localStorage.setItem(KEY, JSON.stringify(data));
@@ -908,27 +982,18 @@ function badgeFor(st){
   if(st==="N/A") return '<span class="badge b-folder">N/A</span>';
   return '<span class="badge b-up">'+st+'</span>';
 }
-function effStatus(client,i){
-  if(client.overrides && client.overrides[i]!=null) return client.overrides[i];
-  return data.curriculum[i].status;
-}
-function clientProgress(c){
-  let sent=0,tot=0;
-  data.curriculum.forEach((t,i)=>{ const s=effStatus(c,i); if(s!=="N/A"){tot++; if(s.startsWith("✓"))sent++;} });
-  return tot?Math.round(100*sent/tot):0;
-}
 function renderStats(){
   const sheet=data.clients.filter(c=>c.onSheet).length;
   const folderOnly=data.clients.filter(c=>c.hasDashboard&&!c.onSheet).length;
   const noDash=data.clients.filter(c=>!c.hasDashboard).length;
-  const sent=data.curriculum.filter(t=>t.status.startsWith("✓")).length;
+  const avg=data.clients.length?Math.round(data.clients.reduce((s,c)=>s+clientProgress(c),0)/data.clients.length):0;
   document.getElementById('stats').innerHTML=`
     <div class="stat"><div class="n">${data.clients.length}</div><div class="l">Clients total</div></div>
     <div class="stat"><div class="n">${sheet}</div><div class="l">On Cindy's sheet</div></div>
     <div class="stat"><div class="n">${folderOnly}</div><div class="l">Folder only</div></div>
     <div class="stat"><div class="n">${noDash}</div><div class="l">No dashboard</div></div>
-    <div class="stat"><div class="n">${data.curriculum.length}</div><div class="l">Curriculum months</div></div>
-    <div class="stat"><div class="n">${sent}</div><div class="l">Topics sent</div></div>`;
+    <div class="stat"><div class="n">${data.schedules.length}</div><div class="l">Schedules</div></div>
+    <div class="stat"><div class="n">${avg}%</div><div class="l">Avg progress</div></div>`;
 }
 function sourceBadge(c){
   if(!c.hasDashboard) return '<span class="badge b-nodash">No dashboard</span>';
@@ -939,14 +1004,14 @@ function renderClients(){
   const f=document.getElementById('filt').value;
   const rows=data.clients.map((c,idx)=>({c,idx}))
     .filter(({c})=> (f==="all"||(f==="sheet"&&c.onSheet)||(f==="folder"&&c.hasDashboard&&!c.onSheet)||(f==="nodash"&&!c.hasDashboard)))
-    .filter(({c})=> !q || c.name.toLowerCase().includes(q) || c.folder.toLowerCase().includes(q))
+    .filter(({c})=> !q || c.name.toLowerCase().includes(q) || (c.folder||"").toLowerCase().includes(q))
     .sort((a,b)=>a.c.name.localeCompare(b.c.name));
   document.getElementById('clients-body').innerHTML = rows.map(({c,idx})=>{
     const p=clientProgress(c);
     return `<tr>
       <td><b>${esc(c.name)}</b></td>
       <td>${c.folder?`<span class="pill">${esc(c.folder)}</span>`:'<span class="muted">—</span>'}</td>
-      <td>${esc(c.track)}</td>
+      <td><span class="pill">${esc(schedFor(c).name)}</span></td>
       <td>${esc(c.contact)}</td>
       <td>${sourceBadge(c)}</td>
       <td><span class="prog"><i style="width:${p}%"></i></span> <span class="muted">${p}%</span></td>
@@ -954,58 +1019,152 @@ function renderClients(){
     </tr>`;
   }).join("") || `<tr><td colspan="7" class="muted" style="text-align:center;padding:24px">No clients match.</td></tr>`;
 }
-function renderCurriculum(){
-  document.getElementById('cur-body').innerHTML = data.curriculum.map((t,i)=>`
+
+// ---- Schedules tab ----
+function renderSchedules(){
+  if(!schedById(curSchedId)) curSchedId=data.schedules[0].id;
+  document.getElementById('sched-pick').innerHTML=data.schedules.map(s=>`<option value="${esc(s.id)}" ${s.id===curSchedId?'selected':''}>${esc(s.name)}</option>`).join("");
+  const sched=schedById(curSchedId);
+  const n=data.clients.filter(c=>c.scheduleId===curSchedId).length;
+  document.getElementById('sched-assigned').textContent=`${sched.rows.length} month${sched.rows.length===1?'':'s'} • ${n} client${n===1?'':'s'} assigned`;
+  document.getElementById('cur-body').innerHTML = sched.rows.map((t,i)=>`
     <tr>
       <td class="muted">${i+1}</td>
       <td><input value="${esc(t.month)}" style="width:120px" onchange="curEdit(${i},'month',this.value)"></td>
       <td><input value="${esc(t.topic)}" style="width:100%" onchange="curEdit(${i},'topic',this.value)"></td>
       <td><select onchange="curEdit(${i},'status',this.value)">${STATUSES.map(s=>`<option ${s===t.status?'selected':''}>${s}</option>`).join("")}</select></td>
       <td class="row-actions"><button class="danger" onclick="delTopic(${i})">✕</button></td>
-    </tr>`).join("");
+    </tr>`).join("") || `<tr><td colspan="5" class="muted" style="text-align:center;padding:20px">No months yet — click “+ Add month”.</td></tr>`;
 }
-function curEdit(i,k,v){ data.curriculum[i][k]=v; save(); if(k==='status'){renderStats();} }
-function addTopic(){ data.curriculum.push({n:data.curriculum.length+1,month:"New Month",topic:"New Topic",status:"Upcoming"}); save(); renderCurriculum(); renderStats(); }
-function delTopic(i){ if(confirm("Delete this curriculum month?")){ data.curriculum.splice(i,1); save(); renderCurriculum(); renderStats(); } }
+function curEdit(i,k,v){ schedById(curSchedId).rows[i][k]=v; save(); if(k==='status'){ renderStats(); renderClients(); } }
+function addTopic(){ schedById(curSchedId).rows.push({month:"New Month",topic:"New Topic",status:"Upcoming"}); save(); renderSchedules(); renderStats(); }
+function delTopic(i){ if(confirm("Delete this month from the schedule?")){ schedById(curSchedId).rows.splice(i,1); save(); renderSchedules(); renderStats(); renderClients(); } }
+function newSchedule(){
+  const name=prompt("New schedule name? (starts empty)"); if(!name)return;
+  const id=uniqId(slug(name));
+  data.schedules.push({id,name:name.trim(),rows:[]});
+  curSchedId=id; save(); renderSchedules(); renderStats();
+}
+function dupSchedule(){
+  const base=schedById(curSchedId);
+  const name=prompt("Name for the duplicate?", base.name+" (copy)"); if(!name)return;
+  const id=uniqId(slug(name));
+  data.schedules.push({id,name:name.trim(),rows:base.rows.map(r=>({month:r.month,topic:r.topic,status:r.status}))});
+  curSchedId=id; save(); renderSchedules(); renderStats();
+}
+function renameSchedule(){
+  const s=schedById(curSchedId); const name=prompt("Rename schedule:",s.name); if(!name)return;
+  s.name=name.trim();
+  data.clients.forEach(c=>{ if(c.scheduleId===s.id) c.track=s.name; });
+  save(); renderSchedules(); renderClients();
+}
+function delSchedule(){
+  if(data.schedules.length<=1){ alert("You need at least one schedule."); return; }
+  const s=schedById(curSchedId);
+  const assigned=data.clients.filter(c=>c.scheduleId===curSchedId);
+  const fallback=data.schedules.find(x=>x.id!==curSchedId);
+  if(!confirm(`Delete schedule “${s.name}”?`+(assigned.length?`\n\n${assigned.length} client(s) will be reassigned to “${fallback.name}” and their per-month overrides cleared.`:""))) return;
+  assigned.forEach(c=>{ c.scheduleId=fallback.id; c.track=fallback.name; c.overrides={}; });
+  data.schedules=data.schedules.filter(x=>x.id!==curSchedId);
+  curSchedId=fallback.id; save(); renderAll();
+}
 
+// ---- By Month tab ----
+function allMonths(){
+  const set=new Map();
+  data.schedules.forEach(s=>s.rows.forEach(r=>{ const k=monthKey(r.month); if(k!=null && !set.has(k)) set.set(k,String(r.month).trim()); }));
+  return [...set.entries()].sort((a,b)=>a[0]-b[0]).map(e=>({key:e[0],label:e[1]}));
+}
+function renderByMonth(){
+  const months=allMonths();
+  if(bmMonth==null || !months.some(m=>m.label===bmMonth)){
+    const nk=NOW_KEY(); const cur=months.find(m=>m.key>=nk);
+    bmMonth = cur?cur.label : (months.length?months[months.length-1].label:null);
+  }
+  document.getElementById('bm-month').innerHTML = months.map(m=>`<option ${m.label===bmMonth?'selected':''}>${esc(m.label)}</option>`).join("") || `<option>—</option>`;
+  const filt=document.getElementById('bm-filt').value;
+  const mk=monthKey(bmMonth);
+  let rows=data.clients.map(c=>{
+    const sched=schedFor(c); let idx=-1;
+    sched.rows.forEach((r,i)=>{ if(monthKey(r.month)===mk) idx=i; });
+    if(idx<0) return null;
+    return {c, topic:sched.rows[idx].topic, status:effStatus(c,idx), sched:sched.name};
+  }).filter(Boolean);
+  const ct={sent:0,up:0,rep:0,na:0};
+  rows.forEach(r=>{ if(r.status.startsWith("✓"))ct.sent++; else if(r.status.startsWith("↻"))ct.rep++; else if(r.status==="N/A")ct.na++; else ct.up++; });
+  document.getElementById('bm-summary').textContent = bmMonth?`${rows.length} client(s) • ${ct.sent} sent, ${ct.up} upcoming, ${ct.rep} repeat, ${ct.na} N/A`:"";
+  const match=(st)=> filt==="all" ? true
+    : filt==="sent" ? st.startsWith("✓")
+    : filt==="rep" ? st.startsWith("↻")
+    : filt==="na" ? st==="N/A"
+    : (!st.startsWith("✓")&&!st.startsWith("↻")&&st!=="N/A");
+  rows=rows.filter(r=>match(r.status)).sort((a,b)=>a.c.name.localeCompare(b.c.name));
+  document.getElementById('bm-body').innerHTML = rows.map(r=>`
+    <tr><td><b>${esc(r.c.name)}</b></td><td><span class="pill">${esc(r.sched)}</span></td><td>${esc(r.topic)}</td><td>${badgeFor(r.status)}</td></tr>`).join("")
+    || `<tr><td colspan="4" class="muted" style="text-align:center;padding:24px">No clients scheduled for this month${filt!=="all"?" with that status":""}.</td></tr>`;
+}
+
+// ---- client detail (timeline) ----
 function openClient(idx){
-  editIdx=idx; const c=data.clients[idx];
+  editIdx=idx; const c=data.clients[idx]; const sched=schedFor(c); const nk=NOW_KEY();
   document.getElementById('dlg-h').textContent=c.name+" — Schedule";
+  const ordered=sched.rows.map((t,i)=>({t,i,k:monthKey(t.month)}))
+    .sort((a,b)=> ((a.k==null)-(b.k==null)) || ((a.k||0)-(b.k||0)) || (a.i-b.i));
+  const timeline=ordered.map(({t,i,k})=>{
+    const isNow = k!=null && k===nk;
+    return `<tr class="${isNow?'tl-now':''}">
+      <td style="white-space:nowrap">${esc(t.month)}${isNow?' <span class="pill" style="background:rgba(47,111,237,.14);color:var(--accent)">this month</span>':''}</td>
+      <td>${esc(t.topic)}</td>
+      <td><select data-i="${i}" class="ovr">
+        <option value="">default (${esc(t.status)})</option>
+        ${STATUSES.map(s=>`<option ${ (c.overrides&&c.overrides[i]===s)?'selected':'' } value="${s}">${s}</option>`).join("")}
+      </select></td></tr>`;
+  }).join("") || `<tr><td colspan="3" class="muted" style="text-align:center;padding:16px">This schedule has no months yet.</td></tr>`;
+  const sentCount=sched.rows.filter((t,i)=>effStatus(c,i).startsWith("✓")).length;
+  const upCount=sched.rows.filter((t,i)=>{const s=effStatus(c,i);return !s.startsWith("✓")&&s!=="N/A";}).length;
   document.getElementById('dlg-b').innerHTML=`
     <div class="fld"><label>Display name</label><input id="d-name" value="${esc(c.name)}"></div>
-    <div class="fld"><label>Schedule track</label><input id="d-track" value="${esc(c.track)}"></div>
+    <div class="fld"><label>Assigned schedule</label>
+      <select id="d-sched">${data.schedules.map(s=>`<option value="${esc(s.id)}" ${s.id===c.scheduleId?'selected':''}>${esc(s.name)}</option>`).join("")}</select>
+      <div class="muted" style="font-size:11.5px;margin-top:4px">Changing the schedule clears this client's per-month overrides.</div>
+    </div>
     <div class="fld"><label>Training contact</label><input id="d-contact" value="${esc(c.contact)}"></div>
     <div class="fld"><label>Start month</label><input id="d-start" value="${esc(c.startMonth||'')}"></div>
-    <div class="fld"><label>Per-month status (overrides the curriculum default)</label>
-      <table><thead><tr><th>Month</th><th>Topic</th><th>Status</th></tr></thead><tbody>
-      ${data.curriculum.map((t,i)=>`<tr><td>${esc(t.month)}</td><td>${esc(t.topic)}</td>
-        <td><select data-i="${i}" class="ovr">
-          <option value="">— default (${t.status})</option>
-          ${STATUSES.map(s=>`<option ${ (c.overrides&&c.overrides[i]===s)?'selected':'' } value="${s}">${s}</option>`).join("")}
-        </select></td></tr>`).join("")}
-      </tbody></table>
+    <div class="note" style="margin:0 0 14px">Completed: <b>${sentCount}</b> &bull; scheduled out: <b>${upCount}</b> &bull; current month is <b>${esc(monthLabelNow())}</b>.</div>
+    <div class="fld"><label>Training history &amp; schedule — sorted by month; set a status to override the schedule default</label>
+      <table><thead><tr><th>Month</th><th>Topic</th><th>Status</th></tr></thead><tbody>${timeline}</tbody></table>
     </div>`;
   document.getElementById('dlg').showModal();
 }
 function saveDlg(){
   const c=data.clients[editIdx];
-  c.name=val('d-name'); c.track=val('d-track'); c.contact=val('d-contact'); c.startMonth=val('d-start');
-  c.overrides={};
-  document.querySelectorAll('#dlg-b .ovr').forEach(sel=>{ if(sel.value) c.overrides[sel.dataset.i]=sel.value; });
+  c.name=val('d-name'); c.contact=val('d-contact'); c.startMonth=val('d-start');
+  const newSched=val('d-sched');
+  if(newSched!==c.scheduleId){
+    c.scheduleId=newSched; c.overrides={};   // overrides are row-index based; can't survive a schedule swap
+  } else {
+    c.overrides={};
+    document.querySelectorAll('#dlg-b .ovr').forEach(sel=>{ if(sel.value) c.overrides[sel.dataset.i]=sel.value; });
+  }
+  c.track=schedFor(c).name;
   save(); document.getElementById('dlg').close(); renderClients(); renderStats();
+  if(curView==='bymonth') renderByMonth();
 }
 function addClient(){
   const name=prompt("New client display name? (training tracking only — no Drive dashboard)"); if(!name)return;
-  data.clients.push({folder:"",folderId:"",name,track:"Standard Track",contact:"Cindy Simpson",onSheet:false,hasDashboard:false,startMonth:"",overrides:{}});
+  data.clients.push({folder:"",folderId:"",name,track:data.schedules[0].name,scheduleId:data.schedules[0].id,contact:"Cindy Simpson",onSheet:false,hasDashboard:false,startMonth:"",overrides:{}});
   save(); renderClients(); renderStats();
 }
 function delClient(i){ if(confirm("Remove "+data.clients[i].name+" from the schedule app? (does not touch Drive)")){ data.clients.splice(i,1); save(); renderClients(); renderStats(); } }
 
 function showTab(t){
-  ['clients','curriculum'].forEach(x=>{
+  curView=t;
+  ['clients','bymonth','schedules'].forEach(x=>{
     document.getElementById('view-'+x).style.display = x===t?'block':'none';
     document.getElementById('tab-'+x).classList.toggle('active',x===t);
   });
+  if(t==='bymonth') renderByMonth();
+  if(t==='schedules') renderSchedules();
 }
 function exportJSON(){
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
@@ -1014,10 +1173,10 @@ function exportJSON(){
 }
 function importJSON(e){
   const f=e.target.files[0]; if(!f)return;
-  const r=new FileReader(); r.onload=()=>{ try{ data=JSON.parse(r.result); save(); renderAll(); alert("Imported."); }catch(err){ alert("Bad JSON: "+err); } }; r.readAsText(f);
+  const r=new FileReader(); r.onload=()=>{ try{ data=migrate(JSON.parse(r.result)); curSchedId=data.schedules[0].id; save(); renderAll(); alert("Imported."); }catch(err){ alert("Bad JSON: "+err); } }; r.readAsText(f);
 }
-function resetData(){ if(confirm("Discard local changes and reload the original seed data?")){ data=structuredClone(SEED); save(); renderAll(); } }
-function renderAll(){ renderStats(); renderClients(); renderCurriculum(); }
+function resetData(){ if(confirm("Discard local changes and reload the original seed data?")){ data=migrate(structuredClone(SEED)); curSchedId=data.schedules[0].id; save(); renderAll(); } }
+function renderAll(){ renderStats(); renderClients(); renderSchedules(); renderByMonth(); }
 function val(id){return document.getElementById(id).value;}
 function esc(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
 
