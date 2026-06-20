@@ -158,6 +158,7 @@
       <label class="muted" style="font-size:12px">Schedule</label>
       <select id="bc-sched" onchange="bcSetSchedule(this.value)" style="min-width:160px"></select>
       <button onclick="if(bcIdx!=null)openClient(bcIdx)">Edit details</button>
+      <button class="cta" onclick="bcAddClient()">+ Add customer</button>
       <span id="bc-summary" class="muted" style="font-size:12.5px"></span>
     </div>
     <table>
@@ -1150,6 +1151,15 @@ function bcSetOverride(i,v){
   const c=data.clients[bcIdx]; if(!c) return;
   if(v) c.overrides[i]=v; else delete c.overrides[i];
   save(); renderByCustomer(); renderClients(); renderStats();
+}
+function bcAddClient(){
+  const name=prompt("New customer display name? (training tracking only — no Drive dashboard)"); if(!name)return;
+  // land the new customer on the schedule currently shown in the picker, falling back to the first schedule
+  const cur=data.clients[bcIdx], schedId=(cur&&cur.scheduleId)||data.schedules[0].id;
+  const sched=data.schedules.find(s=>s.id===schedId)||data.schedules[0];
+  data.clients.push({folder:"",folderId:"",name,track:sched.name,scheduleId:sched.id,contact:"Cindy Simpson",onSheet:false,hasDashboard:false,startMonth:"",overrides:{}});
+  bcIdx=data.clients.length-1;
+  save(); renderByCustomer(); renderClients(); renderStats(); if(curView==='bymonth') renderByMonth();
 }
 
 // ---- client detail (timeline) ----
