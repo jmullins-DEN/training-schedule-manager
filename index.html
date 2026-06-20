@@ -104,6 +104,7 @@
     <nav>
       <div class="nav-h">Manage</div>
       <button id="tab-clients" class="nav active" onclick="showTab('clients')">👥 <span>Clients</span></button>
+      <button id="tab-bycustomer" class="nav" onclick="showTab('bycustomer')">👤 <span>By Customer</span></button>
       <button id="tab-bymonth" class="nav" onclick="showTab('bymonth')">🗓️ <span>By Month</span></button>
       <button id="tab-schedules" class="nav" onclick="showTab('schedules')">📘 <span>Schedules</span></button>
     </nav>
@@ -145,6 +146,23 @@
     <table>
       <thead><tr><th>Client</th><th>Folder</th><th>Schedule</th><th>Contact</th><th>Dashboard</th><th>Progress</th><th></th></tr></thead>
       <tbody id="clients-body"></tbody>
+    </table>
+  </div>
+
+  <!-- BY CUSTOMER -->
+  <div id="view-bycustomer" style="display:none">
+    <div class="note">Select a customer to view and edit <b>their individual training schedule</b> — which track they're on, what they've completed, and what's scheduled out. A per-month status set here overrides the schedule default for this customer only.</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <label class="muted" style="font-size:12px">Customer</label>
+      <select id="bc-pick" onchange="bcIdx=+this.value;renderByCustomer()" style="min-width:200px"></select>
+      <label class="muted" style="font-size:12px">Schedule</label>
+      <select id="bc-sched" onchange="bcSetSchedule(this.value)" style="min-width:160px"></select>
+      <button onclick="if(bcIdx!=null)openClient(bcIdx)">Edit details</button>
+      <span id="bc-summary" class="muted" style="font-size:12.5px"></span>
+    </div>
+    <table>
+      <thead><tr><th>Month</th><th>Training Topic</th><th>Status</th></tr></thead>
+      <tbody id="bc-body"></tbody>
     </table>
   </div>
 
@@ -914,7 +932,7 @@ const SEED = {
 const KEY = "den-training-schedule-v1";
 const STATUSES = ["✓ Sent","Upcoming","↻ Repeat","N/A"];
 const MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
-let data, editIdx=-1, curSchedId=null, bmMonth=null, curView='clients';
+let data, editIdx=-1, curSchedId=null, bmMonth=null, bcIdx=null, curView='clients';
 
 // ---- month helpers ----
 function monthKey(m){
@@ -1096,6 +1114,44 @@ function renderByMonth(){
     || `<tr><td colspan="4" class="muted" style="text-align:center;padding:24px">No clients scheduled for this month${filt!=="all"?" with that status":""}.</td></tr>`;
 }
 
+// ---- By Customer tab ----
+function renderByCustomer(){
+  const opts=data.clients.map((c,idx)=>({c,idx})).sort((a,b)=>a.c.name.localeCompare(b.c.name));
+  if(bcIdx==null || !data.clients[bcIdx]) bcIdx = opts.length?opts[0].idx:null;
+  document.getElementById('bc-pick').innerHTML = opts.map(({c,idx})=>`<option value="${idx}" ${idx===bcIdx?'selected':''}>${esc(c.name)}</option>`).join("") || `<option>—</option>`;
+  const schedSel=document.getElementById('bc-sched'), body=document.getElementById('bc-body'), sum=document.getElementById('bc-summary');
+  if(bcIdx==null){ schedSel.innerHTML=''; sum.textContent=''; body.innerHTML=`<tr><td colspan="3" class="muted" style="text-align:center;padding:24px">No customers yet.</td></tr>`; return; }
+  const c=data.clients[bcIdx], sched=schedFor(c), nk=NOW_KEY();
+  schedSel.innerHTML = data.schedules.map(s=>`<option value="${esc(s.id)}" ${s.id===c.scheduleId?'selected':''}>${esc(s.name)}</option>`).join("");
+  const sentCount=sched.rows.filter((t,i)=>effStatus(c,i).startsWith("✓")).length;
+  const upCount=sched.rows.filter((t,i)=>{const s=effStatus(c,i);return !s.startsWith("✓")&&s!=="N/A";}).length;
+  sum.textContent = `completed ${sentCount} • scheduled out ${upCount} • current month is ${monthLabelNow()}`;
+  const ordered=sched.rows.map((t,i)=>({t,i,k:monthKey(t.month)}))
+    .sort((a,b)=> ((a.k==null)-(b.k==null)) || ((a.k||0)-(b.k||0)) || (a.i-b.i));
+  body.innerHTML = ordered.map(({t,i,k})=>{
+    const isNow = k!=null && k===nk;
+    const ov = c.overrides && c.overrides[i]!=null;
+    return `<tr class="${isNow?'tl-now':''}">
+      <td style="white-space:nowrap">${esc(t.month)}${isNow?' <span class="pill" style="background:rgba(14,126,166,.14);color:var(--accent)">this month</span>':''}</td>
+      <td>${esc(t.topic)}</td>
+      <td><select onchange="bcSetOverride(${i},this.value)">
+        <option value="">default (${esc(t.status)})</option>
+        ${STATUSES.map(s=>`<option ${ov&&c.overrides[i]===s?'selected':''} value="${s}">${s}</option>`).join("")}
+      </select></td></tr>`;
+  }).join("") || `<tr><td colspan="3" class="muted" style="text-align:center;padding:24px">This schedule has no months yet.</td></tr>`;
+}
+function bcSetSchedule(id){
+  const c=data.clients[bcIdx]; if(!c||id===c.scheduleId) return;
+  if(!confirm("Change this customer's schedule? Their per-month status overrides will be cleared.")){ renderByCustomer(); return; }
+  c.scheduleId=id; c.overrides={}; c.track=schedFor(c).name;
+  save(); renderByCustomer(); renderClients(); renderStats(); if(curView==='bymonth') renderByMonth();
+}
+function bcSetOverride(i,v){
+  const c=data.clients[bcIdx]; if(!c) return;
+  if(v) c.overrides[i]=v; else delete c.overrides[i];
+  save(); renderByCustomer(); renderClients(); renderStats();
+}
+
 // ---- client detail (timeline) ----
 function openClient(idx){
   editIdx=idx; const c=data.clients[idx]; const sched=schedFor(c); const nk=NOW_KEY();
@@ -1141,6 +1197,7 @@ function saveDlg(){
   c.track=schedFor(c).name;
   save(); document.getElementById('dlg').close(); renderClients(); renderStats();
   if(curView==='bymonth') renderByMonth();
+  if(curView==='bycustomer') renderByCustomer();
 }
 function addClient(){
   const name=prompt("New client display name? (training tracking only — no Drive dashboard)"); if(!name)return;
@@ -1151,10 +1208,11 @@ function delClient(i){ if(confirm("Remove "+data.clients[i].name+" from the sche
 
 function showTab(t){
   curView=t;
-  ['clients','bymonth','schedules'].forEach(x=>{
+  ['clients','bycustomer','bymonth','schedules'].forEach(x=>{
     document.getElementById('view-'+x).style.display = x===t?'block':'none';
     document.getElementById('tab-'+x).classList.toggle('active',x===t);
   });
+  if(t==='bycustomer') renderByCustomer();
   if(t==='bymonth') renderByMonth();
   if(t==='schedules') renderSchedules();
 }
@@ -1168,7 +1226,7 @@ function importJSON(e){
   const r=new FileReader(); r.onload=()=>{ try{ data=migrate(JSON.parse(r.result)); curSchedId=data.schedules[0].id; save(); renderAll(); alert("Imported."); }catch(err){ alert("Bad JSON: "+err); } }; r.readAsText(f);
 }
 function resetData(){ if(confirm("Discard local changes and reload the original seed data?")){ data=migrate(structuredClone(SEED)); curSchedId=data.schedules[0].id; save(); renderAll(); } }
-function renderAll(){ renderStats(); renderClients(); renderSchedules(); renderByMonth(); }
+function renderAll(){ renderStats(); renderClients(); renderSchedules(); renderByMonth(); renderByCustomer(); }
 function val(id){return document.getElementById(id).value;}
 function esc(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
 
